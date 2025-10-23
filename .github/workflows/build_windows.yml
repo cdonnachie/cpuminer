@@ -155,3 +155,31 @@ jobs:
         run: |
           7z x cpuminer-windows-x86_64-sse2.zip
           ./cpuminer-windows-x86_64-sse2.exe --help
+
+  create-windows-release:
+    if: github.event_name == 'release'
+    needs: [build-windows, test-basic-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./windows-artifacts
+          pattern: cpuminer-windows-*-complete
+
+      - name: Create consolidated Windows archive
+        run: |
+          mkdir -p cpuminer-windows-all
+          cd windows-artifacts
+          for dir in */; do
+            unzip -j "$dir"*.zip -d ../cpuminer-windows-all/
+          done
+          cd ..
+          zip -r cpuminer-windows-all-variants.zip cpuminer-windows-all/
+
+      - name: Upload consolidated Windows release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: cpuminer-windows-all-variants.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

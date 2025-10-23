@@ -115,7 +115,7 @@ jobs:
           chmod +x cpuminer-linux-x86_64-sse2
           ./cpuminer-linux-x86_64-sse2 --help
 
-  create-unified-release:
+  create-linux-release:
     if: github.event_name == 'release'
     needs: [build-linux, test-basic]
     runs-on: ubuntu-latest
@@ -126,24 +126,19 @@ jobs:
           path: ./linux-artifacts
           pattern: cpuminer-linux-*-archive
 
-      - name: Download all Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./windows-artifacts
-          pattern: cpuminer-windows-*-complete
+      - name: Create consolidated Linux archive
+        run: |
+          mkdir -p cpuminer-linux-all
+          cd linux-artifacts
+          for dir in */; do
+            tar -xzf "$dir"*.tar.gz -C ../cpuminer-linux-all/
+          done
+          cd ..
+          tar -czf cpuminer-linux-all-variants.tar.gz cpuminer-linux-all/
 
-      - name: Download all macOS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./macos-artifacts
-          pattern: cpuminer-macos-*
-
-      - name: Upload all release assets
+      - name: Upload consolidated Linux release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ./linux-artifacts/*/cpuminer-linux-*.tar.gz
-            ./windows-artifacts/*/cpuminer-windows-*.zip
-            ./macos-artifacts/*/cpuminer-macos-*
+          files: cpuminer-linux-all-variants.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

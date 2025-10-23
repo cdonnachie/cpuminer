@@ -122,5 +122,33 @@ jobs:
 
       - name: Make executable
         run: chmod +x cpuminer-macos-x86_64-sse2
+
+  create-macos-release:
+    if: github.event_name == 'release'
+    needs: [build-macos, test-basic-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./macos-artifacts
+          pattern: cpuminer-macos-*
+
+      - name: Create consolidated macOS archive
+        run: |
+          mkdir -p cpuminer-macos-all
+          cd macos-artifacts
+          for dir in */; do
+            cp "$dir"cpuminer-macos-* ../cpuminer-macos-all/
+          done
+          cd ..
+          tar -czf cpuminer-macos-all-variants.tar.gz cpuminer-macos-all/
+
+      - name: Upload consolidated macOS release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: cpuminer-macos-all-variants.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 # TODO: Add universal binary creation for both x86_64 and ARM64
 # TODO: Consider code signing for distribution if needed
