@@ -10,7 +10,7 @@ on:
 
 env:
   # MSYS2 dependencies
-  MSYS2_DEPS: base-devel autotools automake autoconf libtool mingw-w64-x86_64-toolchain mingw-w64-x86_64-curl mingw-w64-x86_64-openssl mingw-w64-x86_64-jansson mingw-w64-x86_64-gmp mingw-w64-i686-toolchain mingw-w64-i686-curl mingw-w64-i686-openssl mingw-w64-i686-jansson mingw-w64-i686-gmp
+  MSYS2_DEPS: base-devel autotools automake autoconf libtool mingw-w64-x86_64-toolchain mingw-w64-x86_64-curl mingw-w64-x86_64-openssl mingw-w64-x86_64-jansson mingw-w64-x86_64-gmp mingw-w64-i686-toolchain mingw-w64-i686-curl mingw-w64-i686-openssl mingw-w64-i686-jansson mingw-w64-i686-gmp zip
 
 jobs:
   build-windows:

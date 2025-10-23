@@ -36,11 +36,6 @@ jobs:
             target_arch: "x86_64"
           # macOS ARM64 builds (Apple Silicon)
           - os: macos-14
-            arch: arm64-basic
-            cflags: "-march=armv8-a"
-            suffix: "macos-arm64-basic"
-            target_arch: "arm64"
-          - os: macos-14
             arch: arm64-crypto
             cflags: "-march=armv8-a+crypto"
             suffix: "macos-arm64-crypto"
