@@ -19,33 +19,54 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Basic SSE2 build
           - arch: x86_64-sse2
             cflags: "-march=core2 -msse2"
             suffix: "windows-x86_64-sse2"
             mingw_env: "MINGW64"
             mingw_arch: "x86_64"
+          # AVX builds
           - arch: x86_64-avx
             cflags: "-march=corei7-avx -maes"
             suffix: "windows-x86_64-avx"
             mingw_env: "MINGW64"
             mingw_arch: "x86_64"
+          # AVX2 builds
           - arch: x86_64-avx2
             cflags: "-march=core-avx2 -maes"
             suffix: "windows-x86_64-avx2"
             mingw_env: "MINGW64"
             mingw_arch: "x86_64"
+          # AVX2 with AES and SHA extensions
+          - arch: x86_64-avx2-aes
+            cflags: "-march=core-avx2 -maes -msha"
+            suffix: "windows-x86_64-avx2-aes"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          # AVX2 with SHA and VAES (newer CPUs)
+          - arch: x86_64-avx2-sha-vaes
+            cflags: "-march=core-avx2 -maes -msha -mvaes"
+            suffix: "windows-x86_64-avx2-sha-vaes"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          # AVX512 builds
           - arch: x86_64-avx512
-            cflags: "-march=skylake-avx512"
+            cflags: "-march=skylake-avx512 -maes"
             suffix: "windows-x86_64-avx512"
             mingw_env: "MINGW64"
             mingw_arch: "x86_64"
-          # i686 build disabled due to 128-bit SIMD incompatibility
-          # The codebase requires 64-bit SIMD instructions not available on 32-bit
-          # - arch: i686-sse2
-          #   cflags: "-march=pentium4 -msse2"
-          #   suffix: "windows-i686-sse2"
-          #   mingw_env: "MINGW32"
-          #   mingw_arch: "i686"
+          # AVX512 with SHA and VAES
+          - arch: x86_64-avx512-sha-vaes
+            cflags: "-march=skylake-avx512 -maes -msha -mvaes"
+            suffix: "windows-x86_64-avx512-sha-vaes"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          # AES-specific optimized build
+          - arch: x86_64-aes-sse42
+            cflags: "-march=westmere -msse4.2 -maes"
+            suffix: "windows-x86_64-aes-sse42"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
 
     steps:
       - name: Checkout code
@@ -84,11 +105,41 @@ jobs:
         run: |
           mv cpuminer.exe cpuminer-${{ matrix.suffix }}.exe
 
+      - name: Collect dependencies
+        shell: msys2 {0}
+        run: |
+          mkdir -p release-files
+          cp cpuminer-${{ matrix.suffix }}.exe release-files/
+
+          # Copy required DLLs using ldd to find dependencies
+          ldd cpuminer-${{ matrix.suffix }}.exe | grep -i mingw | awk '{print $3}' | xargs -I {} cp {} release-files/ || true
+
+          # Copy common required DLLs manually to ensure we have them
+          cp /${{ matrix.mingw_env }}/bin/libcurl-4.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libssl-3-x64.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libcrypto-3-x64.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libjansson-4.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libgmp-10.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libwinpthread-1.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libgcc_s_seh-1.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/libstdc++-6.dll release-files/ || true
+          cp /${{ matrix.mingw_env }}/bin/zlib1.dll release-files/ || true
+
+          # List what we collected
+          echo "Files in release package:"
+          ls -la release-files/
+
+      - name: Create release archive
+        shell: msys2 {0}
+        run: |
+          cd release-files
+          zip -r ../cpuminer-${{ matrix.suffix }}.zip *
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cpuminer-${{ matrix.suffix }}
-          path: cpuminer-${{ matrix.suffix }}.exe
+          name: cpuminer-${{ matrix.suffix }}-complete
+          path: cpuminer-${{ matrix.suffix }}.zip
           retention-days: 30
 
   test-basic-windows:
@@ -98,6 +149,9 @@ jobs:
       - name: Download Windows SSE2 artifact
         uses: actions/download-artifact@v4
         with:
-          name: cpuminer-windows-x86_64-sse2
-# TODO: Add cross-compilation with MinGW from Linux if MSYS2 approach has issues
-# TODO: Consider vcpkg approach for dependency management if needed
+          name: cpuminer-windows-x86_64-sse2-complete
+
+      - name: Extract and test
+        run: |
+          7z x cpuminer-windows-x86_64-sse2.zip
+          ./cpuminer-windows-x86_64-sse2.exe --help

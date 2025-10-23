@@ -19,18 +19,38 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Basic SSE2 build
           - arch: x86_64-sse2
             cflags: "-march=core2 -msse2"
             suffix: "linux-x86_64-sse2"
+          # AVX builds
           - arch: x86_64-avx
             cflags: "-march=corei7-avx -maes"
             suffix: "linux-x86_64-avx"
+          # AVX2 builds
           - arch: x86_64-avx2
             cflags: "-march=core-avx2 -maes"
             suffix: "linux-x86_64-avx2"
+          # AVX2 with AES and SHA extensions
+          - arch: x86_64-avx2-aes
+            cflags: "-march=core-avx2 -maes -msha"
+            suffix: "linux-x86_64-avx2-aes"
+          # AVX2 with SHA and VAES (newer CPUs)
+          - arch: x86_64-avx2-sha-vaes
+            cflags: "-march=core-avx2 -maes -msha -mvaes"
+            suffix: "linux-x86_64-avx2-sha-vaes"
+          # AVX512 builds
           - arch: x86_64-avx512
-            cflags: "-march=skylake-avx512"
+            cflags: "-march=skylake-avx512 -maes"
             suffix: "linux-x86_64-avx512"
+          # AVX512 with SHA and VAES
+          - arch: x86_64-avx512-sha-vaes
+            cflags: "-march=skylake-avx512 -maes -msha -mvaes"
+            suffix: "linux-x86_64-avx512-sha-vaes"
+          # AES-specific optimized build
+          - arch: x86_64-aes-sse42
+            cflags: "-march=westmere -msse4.2 -maes"
+            suffix: "linux-x86_64-aes-sse42"
           # ARM64 build removed - cross-compilation complexity and limited mining use case
           # - arch: arm64
           #   cflags: "-march=armv8-a+crypto+aes"
@@ -69,11 +89,15 @@ jobs:
         run: |
           mv cpuminer cpuminer-${{ matrix.suffix }}
 
+      - name: Create release archive
+        run: |
+          tar -czf cpuminer-${{ matrix.suffix }}.tar.gz cpuminer-${{ matrix.suffix }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cpuminer-${{ matrix.suffix }}
-          path: cpuminer-${{ matrix.suffix }}
+          name: cpuminer-${{ matrix.suffix }}-archive
+          path: cpuminer-${{ matrix.suffix }}.tar.gz
           retention-days: 30
 
   test-basic:
@@ -83,9 +107,43 @@ jobs:
       - name: Download Linux SSE2 artifact
         uses: actions/download-artifact@v4
         with:
-          name: cpuminer-linux-x86_64-sse2
+          name: cpuminer-linux-x86_64-sse2-archive
 
-      - name: Make executable
-        run: chmod +x cpuminer-linux-x86_64-sse2
-# TODO: Add Windows builds after Linux is working
-# TODO: Add macOS builds after Windows is working
+      - name: Extract and test
+        run: |
+          tar -xzf cpuminer-linux-x86_64-sse2.tar.gz
+          chmod +x cpuminer-linux-x86_64-sse2
+          ./cpuminer-linux-x86_64-sse2 --help
+
+  create-unified-release:
+    if: github.event_name == 'release'
+    needs: [build-linux, test-basic]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./linux-artifacts
+          pattern: cpuminer-linux-*-archive
+
+      - name: Download all Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./windows-artifacts
+          pattern: cpuminer-windows-*-complete
+
+      - name: Download all macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./macos-artifacts
+          pattern: cpuminer-macos-*
+
+      - name: Upload all release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./linux-artifacts/*/cpuminer-linux-*.tar.gz
+            ./windows-artifacts/*/cpuminer-windows-*.zip
+            ./macos-artifacts/*/cpuminer-macos-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

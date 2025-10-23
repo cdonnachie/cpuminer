@@ -36,9 +36,29 @@ jobs:
             target_arch: "x86_64"
           # macOS ARM64 builds (Apple Silicon)
           - os: macos-14
-            arch: arm64
+            arch: arm64-basic
+            cflags: "-march=armv8-a"
+            suffix: "macos-arm64-basic"
+            target_arch: "arm64"
+          - os: macos-14
+            arch: arm64-crypto
+            cflags: "-march=armv8-a+crypto"
+            suffix: "macos-arm64-crypto"
+            target_arch: "arm64"
+          - os: macos-14
+            arch: arm64-aes
             cflags: "-march=armv8-a+crypto+aes"
-            suffix: "macos-arm64"
+            suffix: "macos-arm64-aes"
+            target_arch: "arm64"
+          - os: macos-14
+            arch: arm64-sha
+            cflags: "-march=armv8-a+crypto+aes+sha2+sha3"
+            suffix: "macos-arm64-sha"
+            target_arch: "arm64"
+          - os: macos-14
+            arch: arm64-neon
+            cflags: "-march=armv8-a+crypto+aes+sha2+sha3+fp16+rcpc"
+            suffix: "macos-arm64-neon"
             target_arch: "arm64"
 
     runs-on: ${{ matrix.os }}
