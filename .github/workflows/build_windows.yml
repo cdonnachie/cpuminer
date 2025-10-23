@@ -1,0 +1,103 @@
+name: Build cpuminer-opt Windows
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+  release:
+    types: [published]
+
+env:
+  # MSYS2 dependencies
+  MSYS2_DEPS: base-devel autotools automake autoconf libtool mingw-w64-x86_64-toolchain mingw-w64-x86_64-curl mingw-w64-x86_64-openssl mingw-w64-x86_64-jansson mingw-w64-x86_64-gmp mingw-w64-i686-toolchain mingw-w64-i686-curl mingw-w64-i686-openssl mingw-w64-i686-jansson mingw-w64-i686-gmp
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64-sse2
+            cflags: "-march=core2 -msse2"
+            suffix: "windows-x86_64-sse2"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          - arch: x86_64-avx
+            cflags: "-march=corei7-avx -maes"
+            suffix: "windows-x86_64-avx"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          - arch: x86_64-avx2
+            cflags: "-march=core-avx2 -maes"
+            suffix: "windows-x86_64-avx2"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          - arch: x86_64-avx512
+            cflags: "-march=skylake-avx512"
+            suffix: "windows-x86_64-avx512"
+            mingw_env: "MINGW64"
+            mingw_arch: "x86_64"
+          # i686 build disabled due to 128-bit SIMD incompatibility
+          # The codebase requires 64-bit SIMD instructions not available on 32-bit
+          # - arch: i686-sse2
+          #   cflags: "-march=pentium4 -msse2"
+          #   suffix: "windows-i686-sse2"
+          #   mingw_env: "MINGW32"
+          #   mingw_arch: "i686"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.mingw_env }}
+          update: true
+          install: ${{ env.MSYS2_DEPS }}
+
+      - name: Generate build files
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+
+      - name: Configure build
+        shell: msys2 {0}
+        run: |
+          CFLAGS="-O3 ${{ matrix.cflags }} -Wall -flax-vector-conversions" \
+          ./configure --with-curl
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          make -j$(nproc)
+
+      - name: Strip binary
+        shell: msys2 {0}
+        run: |
+          strip cpuminer.exe
+
+      - name: Rename binary
+        shell: msys2 {0}
+        run: |
+          mv cpuminer.exe cpuminer-${{ matrix.suffix }}.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpuminer-${{ matrix.suffix }}
+          path: cpuminer-${{ matrix.suffix }}.exe
+          retention-days: 30
+
+  test-basic-windows:
+    needs: [build-windows]
+    runs-on: windows-latest
+    steps:
+      - name: Download Windows SSE2 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cpuminer-windows-x86_64-sse2
+# TODO: Add cross-compilation with MinGW from Linux if MSYS2 approach has issues
+# TODO: Consider vcpkg approach for dependency management if needed

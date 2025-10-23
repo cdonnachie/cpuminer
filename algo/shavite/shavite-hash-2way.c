@@ -7,46 +7,46 @@
 
 #if defined(__AVX2__)
 
+#if defined(__AES__)
 
 static const uint32_t IV512[] =
-{
+    {
         0x72FCCDD8, 0x79CA4727, 0x128A077B, 0x40D55AEC,
         0xD1901A06, 0x430AE307, 0xB29F5CD1, 0xDF07FBFC,
         0x8E45D73D, 0x681AB538, 0xBDE86578, 0xDD577E47,
-        0xE275EADE, 0x502D9FCD, 0xB9357178, 0x022A4B9A
-};
+        0xE275EADE, 0x502D9FCD, 0xB9357178, 0x022A4B9A};
 
 #if defined(__VAES__)
 
-#define mm256_aesenc_2x128( x, k ) \
-   _mm256_aesenc_epi128( x, _mm256_castsi128_si256( k ) )
+#define mm256_aesenc_2x128(x, k) \
+   _mm256_aesenc_epi128(x, _mm256_castsi128_si256(k))
 
 #else
 
-#define mm256_aesenc_2x128( x, k ) \
-   _mm256_inserti128_si256( _mm256_castsi128_si256( \
-            _mm_aesenc_si128( _mm256_castsi256_si128(   x ),    k ) ), \
-            _mm_aesenc_si128( _mm256_extracti128_si256( x, 1 ), k ), 1 )
+#define mm256_aesenc_2x128(x, k)                                                \
+   _mm256_inserti128_si256(_mm256_castsi128_si256(                              \
+                               _mm_aesenc_si128(_mm256_castsi256_si128(x), k)), \
+                           _mm_aesenc_si128(_mm256_extracti128_si256(x, 1), k), 1)
 
 #endif
 
-#if defined (VL256)
+#if defined(VL256)
 
 #define DECL_m256i_count \
    const __m256i count = \
-          mm256_set4_32( ctx->count3, ctx->count2, ctx->count1, ctx->count0 );
+       mm256_set4_32(ctx->count3, ctx->count2, ctx->count1, ctx->count0);
 
 #define COUNT_R0 \
-  _mm256_mask_xor_epi32( count, 0x88, count, m256_neg1 )
+   _mm256_mask_xor_epi32(count, 0x88, count, m256_neg1)
 
 #define COUNT_R1 \
-  mm256_shuflr128_32( _mm256_mask_xor_epi32( count, 0x11, count, m256_neg1 ) )
+   mm256_shuflr128_32(_mm256_mask_xor_epi32(count, 0x11, count, m256_neg1))
 
 #define COUNT_R2 \
-  mm256_swap128_64( _mm256_mask_xor_epi32( count, 0x22, count, m256_neg1 ) )
+   mm256_swap128_64(_mm256_mask_xor_epi32(count, 0x22, count, m256_neg1))
 
 #define COUNT_R13 \
-  mm256_swap64_32( _mm256_mask_xor_epi32( count, 0x44, count, m256_neg1 ) )
+   mm256_swap64_32(_mm256_mask_xor_epi32(count, 0x44, count, m256_neg1))
 
 #else
 
@@ -54,27 +54,27 @@ static const uint32_t IV512[] =
 
 // R matches the loop index not the round number, should changet that
 #define COUNT_R0 \
-  mm256_set4_32( ~ctx->count3, ctx->count2, ctx->count1, ctx->count0 )
+   mm256_set4_32(~ctx->count3, ctx->count2, ctx->count1, ctx->count0)
 
 #define COUNT_R1 \
-  mm256_set4_32( ~ctx->count0, ctx->count1, ctx->count2, ctx->count3 ) 
+   mm256_set4_32(~ctx->count0, ctx->count1, ctx->count2, ctx->count3)
 
 #define COUNT_R2 \
-  mm256_set4_32( ~ctx->count1, ctx->count0, ctx->count3, ctx->count2 )
+   mm256_set4_32(~ctx->count1, ctx->count0, ctx->count3, ctx->count2)
 
 #define COUNT_R13 \
-  mm256_set4_32( ~ctx->count2, ctx->count3, ctx->count0, ctx->count1 )
+   mm256_set4_32(~ctx->count2, ctx->count3, ctx->count0, ctx->count1)
 
 #endif
 
 static void
-c512_2way( shavite512_2way_context *ctx, const void *msg )
+c512_2way(shavite512_2way_context *ctx, const void *msg)
 {
    const v128_t zero = v128_zero;
    __m256i p0, p1, p2, p3, x;
    __m256i k00, k01, k02, k03, k10, k11, k12, k13;
-   __m256i *m = (__m256i*)msg;
-   __m256i *h = (__m256i*)ctx->h;
+   __m256i *m = (__m256i *)msg;
+   __m256i *h = (__m256i *)ctx->h;
    DECL_m256i_count;
    int r;
 
@@ -86,205 +86,219 @@ c512_2way( shavite512_2way_context *ctx, const void *msg )
    // round 0
 
    k00 = m[0];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( p1, k00 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(p1, k00), zero);
    k01 = m[1];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
    k02 = m[2];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
    k03 = m[3];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-   p0 = _mm256_xor_si256( p0, x );
+   p0 = _mm256_xor_si256(p0, x);
 
    k10 = m[4];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( p3, k10 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(p3, k10), zero);
    k11 = m[5];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
    k12 = m[6];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
    k13 = m[7];
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
 
-   p2 = _mm256_xor_si256( p2, x );
+   p2 = _mm256_xor_si256(p2, x);
 
-   for ( r = 0; r < 3; r ++ )
+   for (r = 0; r < 3; r++)
    {
       // round 1, 5, 9
 
-     k00 = _mm256_xor_si256( k13, mm256_shuflr128_32(
-                                  mm256_aesenc_2x128( k00, zero ) ) );
+      k00 = _mm256_xor_si256(k13, mm256_shuflr128_32(
+                                      mm256_aesenc_2x128(k00, zero)));
 
-     if ( r == 0 )
-        k00 = _mm256_xor_si256( k00, COUNT_R0 );
+      if (r == 0)
+         k00 = _mm256_xor_si256(k00, COUNT_R0);
 
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p0, k00 ), zero );
-     k01 = _mm256_xor_si256( k00,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k01, zero ) ) );
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p0, k00), zero);
+      k01 = _mm256_xor_si256(k00,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k01, zero)));
 
-     if ( r == 1 )
-        k01 = _mm256_xor_si256( k01, COUNT_R1 );
+      if (r == 1)
+         k01 = _mm256_xor_si256(k01, COUNT_R1);
 
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
-     k02 = _mm256_xor_si256( k01,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k02, zero ) ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
-     k03 = _mm256_xor_si256( k02,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k03, zero ) ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
+      k02 = _mm256_xor_si256(k01,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k02, zero)));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
+      k03 = _mm256_xor_si256(k02,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k03, zero)));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-     p3 = _mm256_xor_si256( p3, x );
+      p3 = _mm256_xor_si256(p3, x);
 
-     k10 = _mm256_xor_si256( k03,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k10, zero ) ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p2, k10 ), zero );
-     k11 = _mm256_xor_si256( k10,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k11, zero ) ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
-     k12 = _mm256_xor_si256( k11,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k12, zero ) ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
-     k13 = _mm256_xor_si256( k12,
-		     mm256_shuflr128_32( mm256_aesenc_2x128( k13, zero ) ) );
+      k10 = _mm256_xor_si256(k03,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k10, zero)));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p2, k10), zero);
+      k11 = _mm256_xor_si256(k10,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k11, zero)));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
+      k12 = _mm256_xor_si256(k11,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k12, zero)));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
+      k13 = _mm256_xor_si256(k12,
+                             mm256_shuflr128_32(mm256_aesenc_2x128(k13, zero)));
 
-     if ( r == 2 )
-        k13 = _mm256_xor_si256( k13, COUNT_R2 );
- 
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
-     p1 = _mm256_xor_si256( p1, x );
-     
-     // round 2, 6, 10
+      if (r == 2)
+         k13 = _mm256_xor_si256(k13, COUNT_R2);
 
-     k00 = _mm256_xor_si256( k00, _mm256_alignr_epi8( k13, k12, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p3, k00 ), zero );
-     k01 = _mm256_xor_si256( k01, _mm256_alignr_epi8( k00, k13, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
-     k02 = _mm256_xor_si256( k02, _mm256_alignr_epi8( k01, k00, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
-     k03 = _mm256_xor_si256( k03, _mm256_alignr_epi8( k02, k01, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
+      p1 = _mm256_xor_si256(p1, x);
 
-     p2 = _mm256_xor_si256( p2, x );
+      // round 2, 6, 10
 
-     k10 = _mm256_xor_si256( k10, _mm256_alignr_epi8( k03, k02, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p1, k10 ), zero );
-     k11 = _mm256_xor_si256( k11, _mm256_alignr_epi8( k10, k03, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
-     k12 = _mm256_xor_si256( k12, _mm256_alignr_epi8( k11, k10, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
-     k13 = _mm256_xor_si256( k13, _mm256_alignr_epi8( k12, k11, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
+      k00 = _mm256_xor_si256(k00, _mm256_alignr_epi8(k13, k12, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p3, k00), zero);
+      k01 = _mm256_xor_si256(k01, _mm256_alignr_epi8(k00, k13, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
+      k02 = _mm256_xor_si256(k02, _mm256_alignr_epi8(k01, k00, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
+      k03 = _mm256_xor_si256(k03, _mm256_alignr_epi8(k02, k01, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-     p0 = _mm256_xor_si256( p0, x );
+      p2 = _mm256_xor_si256(p2, x);
 
-     // round 3, 7, 11
+      k10 = _mm256_xor_si256(k10, _mm256_alignr_epi8(k03, k02, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p1, k10), zero);
+      k11 = _mm256_xor_si256(k11, _mm256_alignr_epi8(k10, k03, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
+      k12 = _mm256_xor_si256(k12, _mm256_alignr_epi8(k11, k10, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
+      k13 = _mm256_xor_si256(k13, _mm256_alignr_epi8(k12, k11, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
 
-     k00 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k00, zero ) ), k13 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p2, k00 ), zero );
-     k01 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k01, zero ) ), k00 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
-     k02 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k02, zero ) ), k01 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
-     k03 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k03, zero ) ), k02 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+      p0 = _mm256_xor_si256(p0, x);
 
-     p1 = _mm256_xor_si256( p1, x );
+      // round 3, 7, 11
 
-     k10 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k10, zero ) ), k03 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p0, k10 ), zero );
-     k11 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k11, zero ) ), k10 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
-     k12 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k12, zero ) ), k11 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
-     k13 = _mm256_xor_si256( mm256_shuflr128_32(
-                                     mm256_aesenc_2x128( k13, zero ) ), k12 );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
+      k00 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k00, zero)),
+                             k13);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p2, k00), zero);
+      k01 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k01, zero)),
+                             k00);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
+      k02 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k02, zero)),
+                             k01);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
+      k03 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k03, zero)),
+                             k02);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-     p3 = _mm256_xor_si256( p3, x );
+      p1 = _mm256_xor_si256(p1, x);
 
-     // round 4, 8, 12
+      k10 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k10, zero)),
+                             k03);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p0, k10), zero);
+      k11 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k11, zero)),
+                             k10);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
+      k12 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k12, zero)),
+                             k11);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
+      k13 = _mm256_xor_si256(mm256_shuflr128_32(
+                                 mm256_aesenc_2x128(k13, zero)),
+                             k12);
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
 
-     k00 = _mm256_xor_si256( k00, _mm256_alignr_epi8( k13, k12, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p1, k00 ), zero );
-     k01 = _mm256_xor_si256( k01, _mm256_alignr_epi8( k00, k13, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
-     k02 = _mm256_xor_si256( k02, _mm256_alignr_epi8( k01, k00, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
-     k03 = _mm256_xor_si256( k03, _mm256_alignr_epi8( k02, k01, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+      p3 = _mm256_xor_si256(p3, x);
 
-     p0 = _mm256_xor_si256( p0, x );
+      // round 4, 8, 12
 
-     k10 = _mm256_xor_si256( k10, _mm256_alignr_epi8( k03, k02, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( p3, k10 ), zero );
-     k11 = _mm256_xor_si256( k11, _mm256_alignr_epi8( k10, k03, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
-     k12 = _mm256_xor_si256( k12, _mm256_alignr_epi8( k11, k10, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
-     k13 = _mm256_xor_si256( k13, _mm256_alignr_epi8( k12, k11, 4 ) );
-     x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
+      k00 = _mm256_xor_si256(k00, _mm256_alignr_epi8(k13, k12, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p1, k00), zero);
+      k01 = _mm256_xor_si256(k01, _mm256_alignr_epi8(k00, k13, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
+      k02 = _mm256_xor_si256(k02, _mm256_alignr_epi8(k01, k00, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
+      k03 = _mm256_xor_si256(k03, _mm256_alignr_epi8(k02, k01, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-     p2 = _mm256_xor_si256( p2, x );
+      p0 = _mm256_xor_si256(p0, x);
 
+      k10 = _mm256_xor_si256(k10, _mm256_alignr_epi8(k03, k02, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(p3, k10), zero);
+      k11 = _mm256_xor_si256(k11, _mm256_alignr_epi8(k10, k03, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
+      k12 = _mm256_xor_si256(k12, _mm256_alignr_epi8(k11, k10, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
+      k13 = _mm256_xor_si256(k13, _mm256_alignr_epi8(k12, k11, 4));
+      x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
+
+      p2 = _mm256_xor_si256(p2, x);
    }
 
    // round 13
 
-   k00 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k00, zero ) ), k13  );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( p0, k00 ), zero );
-   k01 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k01, zero ) ), k00 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k01 ), zero );
-   k02 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k02, zero ) ), k01 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k02 ), zero );
-   k03 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k03, zero ) ), k02 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k03 ), zero );
+   k00 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k00, zero)),
+                          k13);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(p0, k00), zero);
+   k01 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k01, zero)),
+                          k00);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k01), zero);
+   k02 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k02, zero)),
+                          k01);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k02), zero);
+   k03 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k03, zero)),
+                          k02);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k03), zero);
 
-   p3 = _mm256_xor_si256( p3, x );
+   p3 = _mm256_xor_si256(p3, x);
 
-   k10 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k10, zero ) ), k03 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( p2, k10 ), zero );
-   k11 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k11, zero ) ), k10 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k11 ), zero );
+   k10 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k10, zero)),
+                          k03);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(p2, k10), zero);
+   k11 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k11, zero)),
+                          k10);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k11), zero);
 
-   k12 = mm256_shuflr128_32( mm256_aesenc_2x128( k12, zero ) );
-   k12 = _mm256_xor_si256( k12, _mm256_xor_si256( k11, COUNT_R13 ) );
+   k12 = mm256_shuflr128_32(mm256_aesenc_2x128(k12, zero));
+   k12 = _mm256_xor_si256(k12, _mm256_xor_si256(k11, COUNT_R13));
 
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k12 ), zero );
-   k13 = _mm256_xor_si256( mm256_shuflr128_32(
-			             mm256_aesenc_2x128( k13, zero ) ), k12 );
-   x = mm256_aesenc_2x128( _mm256_xor_si256( x, k13 ), zero );
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k12), zero);
+   k13 = _mm256_xor_si256(mm256_shuflr128_32(
+                              mm256_aesenc_2x128(k13, zero)),
+                          k12);
+   x = mm256_aesenc_2x128(_mm256_xor_si256(x, k13), zero);
 
-   p1 = _mm256_xor_si256( p1, x );
+   p1 = _mm256_xor_si256(p1, x);
 
-   h[0] = _mm256_xor_si256( h[0], p2 );
-   h[1] = _mm256_xor_si256( h[1], p3 );
-   h[2] = _mm256_xor_si256( h[2], p0 );
-   h[3] = _mm256_xor_si256( h[3], p1 );
+   h[0] = _mm256_xor_si256(h[0], p2);
+   h[1] = _mm256_xor_si256(h[1], p3);
+   h[2] = _mm256_xor_si256(h[2], p0);
+   h[3] = _mm256_xor_si256(h[3], p1);
 }
 
-void shavite512_2way_init( shavite512_2way_context *ctx )
+void shavite512_2way_init(shavite512_2way_context *ctx)
 {
-    __m256i *h = (__m256i*)ctx->h;
-    v128_t *iv = (v128_t*)IV512;
-   
-   h[0] = mm256_bcast_m128( iv[0] );
-   h[1] = mm256_bcast_m128( iv[1] );
-   h[2] = mm256_bcast_m128( iv[2] );
-   h[3] = mm256_bcast_m128( iv[3] );
+   __m256i *h = (__m256i *)ctx->h;
+   v128_t *iv = (v128_t *)IV512;
 
-   ctx->ptr    = 0;
+   h[0] = mm256_bcast_m128(iv[0]);
+   h[1] = mm256_bcast_m128(iv[1]);
+   h[2] = mm256_bcast_m128(iv[2]);
+   h[3] = mm256_bcast_m128(iv[3]);
+
+   ctx->ptr = 0;
    ctx->count0 = 0;
    ctx->count1 = 0;
    ctx->count2 = 0;
@@ -292,36 +306,36 @@ void shavite512_2way_init( shavite512_2way_context *ctx )
 }
 
 // not tested, use update_close
-void shavite512_2way_update( shavite512_2way_context *ctx, const void *data,
-                             size_t len )
+void shavite512_2way_update(shavite512_2way_context *ctx, const void *data,
+                            size_t len)
 {
    unsigned char *buf = ctx->buf;
-   size_t         ptr = ctx->ptr;
+   size_t ptr = ctx->ptr;
 
-   while ( len > 0 )
+   while (len > 0)
    {
       size_t clen;
 
       clen = (sizeof ctx->buf) - ptr;
-      if ( clen > len << 1 )
+      if (clen > len << 1)
          clen = len << 1;
-      memcpy( buf + ptr, data, clen );
+      memcpy(buf + ptr, data, clen);
       data = (const unsigned char *)data + clen;
       ptr += clen;
       len -= clen >> 1;
-      if ( ptr == sizeof ctx->buf )
+      if (ptr == sizeof ctx->buf)
       {
-         if ( ( ctx->count0 = ctx->count0 + 1024 )  == 0 )
+         if ((ctx->count0 = ctx->count0 + 1024) == 0)
          {
-             ctx->count1 = ctx->count1 + 1;
-             if ( ctx->count1 == 0 )
-             {
-                ctx->count2 = ctx->count2 + 1;
-                if ( ctx->count2 == 0 )
-                   ctx->count3 = ctx->count3 + 1;
-             }
+            ctx->count1 = ctx->count1 + 1;
+            if (ctx->count1 == 0)
+            {
+               ctx->count2 = ctx->count2 + 1;
+               if (ctx->count2 == 0)
+                  ctx->count3 = ctx->count3 + 1;
+            }
          }
-         c512_2way( ctx, buf );
+         c512_2way(ctx, buf);
          ptr = 0;
       }
    }
@@ -329,83 +343,83 @@ void shavite512_2way_update( shavite512_2way_context *ctx, const void *data,
 }
 
 // not tested
-void shavite512_2way_close( shavite512_2way_context *ctx, void *dst )
+void shavite512_2way_close(shavite512_2way_context *ctx, void *dst)
 {
-    unsigned char *buf;
-    union 
-    {
-       uint32_t u32[4];
-       uint16_t u16[8];
-    } count;
+   unsigned char *buf;
+   union
+   {
+      uint32_t u32[4];
+      uint16_t u16[8];
+   } count;
 
-    buf = ctx->buf;
-    uint32_t vp = ctx->ptr>>5;
+   buf = ctx->buf;
+   uint32_t vp = ctx->ptr >> 5;
 
-    // Terminating byte then zero pad
-    casti_m256i( buf, vp++ ) = mm256_bcast128lo_64( 0x0000000000000080 );
+   // Terminating byte then zero pad
+   casti_m256i(buf, vp++) = mm256_bcast128lo_64(0x0000000000000080);
 
-    // Zero pad full vectors up to count
-    for ( ; vp < 6; vp++ )      
-        casti_m256i( buf, vp ) = m256_zero;
+   // Zero pad full vectors up to count
+   for (; vp < 6; vp++)
+      casti_m256i(buf, vp) = m256_zero;
 
-    // Count = { 0, 16, 64, 80 }. Outsize = 16 u32 = 512 bits = 0x0200
-    // Count is misaligned to 16 bits and straddles a vector.
-    // Use u32 overlay to stage then u16 to load buf.
-    count.u32[0] = ctx->count0 += (ctx->ptr << 2);  // ptr/2 * 8
-    count.u32[1] = ctx->count1;
-    count.u32[2] = ctx->count2;
-    count.u32[3] = ctx->count3;
+   // Count = { 0, 16, 64, 80 }. Outsize = 16 u32 = 512 bits = 0x0200
+   // Count is misaligned to 16 bits and straddles a vector.
+   // Use u32 overlay to stage then u16 to load buf.
+   count.u32[0] = ctx->count0 += (ctx->ptr << 2); // ptr/2 * 8
+   count.u32[1] = ctx->count1;
+   count.u32[2] = ctx->count2;
+   count.u32[3] = ctx->count3;
 
-    casti_m256i( buf, 6 ) = mm256_bcast_m128(
-                  _mm_insert_epi16( v128_zero, count.u16[0], 7 ) ); 
-    casti_m256i( buf, 7 ) = mm256_bcast_m128( _mm_set_epi16(
-                  0x0200,       count.u16[7], count.u16[6], count.u16[5],
-                  count.u16[4], count.u16[3], count.u16[2], count.u16[1] ) );
-                
-    c512_2way( ctx, buf);
+   casti_m256i(buf, 6) = mm256_bcast_m128(
+       _mm_insert_epi16(v128_zero, count.u16[0], 7));
+   casti_m256i(buf, 7) = mm256_bcast_m128(_mm_set_epi16(
+       0x0200, count.u16[7], count.u16[6], count.u16[5],
+       count.u16[4], count.u16[3], count.u16[2], count.u16[1]));
 
-    casti_m256i( dst, 0 ) = casti_m256i( ctx->h, 0 );
-    casti_m256i( dst, 1 ) = casti_m256i( ctx->h, 1 );
-    casti_m256i( dst, 2 ) = casti_m256i( ctx->h, 2 );
-    casti_m256i( dst, 3 ) = casti_m256i( ctx->h, 3 );
+   c512_2way(ctx, buf);
+
+   casti_m256i(dst, 0) = casti_m256i(ctx->h, 0);
+   casti_m256i(dst, 1) = casti_m256i(ctx->h, 1);
+   casti_m256i(dst, 2) = casti_m256i(ctx->h, 2);
+   casti_m256i(dst, 3) = casti_m256i(ctx->h, 3);
 }
 
-void shavite512_2way_update_close( shavite512_2way_context *ctx, void *dst,
-                                   const void *data, size_t len )
+void shavite512_2way_update_close(shavite512_2way_context *ctx, void *dst,
+                                  const void *data, size_t len)
 {
    unsigned char *buf = ctx->buf;
-   size_t         ptr = ctx->ptr;
+   size_t ptr = ctx->ptr;
 
    // process full blocks and load buf with remainder.
-   while ( len > 0 )
+   while (len > 0)
    {
       size_t clen;
 
       clen = (sizeof ctx->buf) - ptr;
-      if ( clen > len << 1 )
+      if (clen > len << 1)
          clen = len << 1;
-      memcpy( buf + ptr, data, clen );
+      memcpy(buf + ptr, data, clen);
       data = (const unsigned char *)data + clen;
       ptr += clen;
       len -= (clen >> 1);
-      if ( ptr == sizeof ctx->buf )
+      if (ptr == sizeof ctx->buf)
       {
-         if ( ( ctx->count0 = ctx->count0 + 1024 )  == 0 )
+         if ((ctx->count0 = ctx->count0 + 1024) == 0)
          {
-             ctx->count1 = ctx->count1 + 1;
-             if ( ctx->count1 == 0 )
-             {
-                ctx->count2 = ctx->count2 + 1;
-                if ( ctx->count2 == 0 )
-                   ctx->count3 = ctx->count3 + 1;
-             }
+            ctx->count1 = ctx->count1 + 1;
+            if (ctx->count1 == 0)
+            {
+               ctx->count2 = ctx->count2 + 1;
+               if (ctx->count2 == 0)
+                  ctx->count3 = ctx->count3 + 1;
+            }
          }
-         c512_2way( ctx, buf );
+         c512_2way(ctx, buf);
          ptr = 0;
       }
    }
 
-   uint32_t vp = ptr>>5;
+   uint32_t vp = ptr >> 5;
    // Count = { 0, 16, 64, 80 }. Outsize = 16 u32 = 512 bits = 0x0200
    // Count is misaligned to 16 bits and straddles 2 vectors.
    // Use u32 overlay to stage then u16 to load buf.
@@ -415,87 +429,87 @@ void shavite512_2way_update_close( shavite512_2way_context *ctx, void *dst,
       uint16_t u16[8];
    } count;
 
-   count.u32[0] = ctx->count0 += (ptr << 2);  // ptr/2 * 8
+   count.u32[0] = ctx->count0 += (ptr << 2); // ptr/2 * 8
    count.u32[1] = ctx->count1;
    count.u32[2] = ctx->count2;
    count.u32[3] = ctx->count3;
 
-   if ( vp == 0 )    // empty buf, xevan.
-   { 
-      casti_m256i( buf, 0 ) = mm256_bcast128lo_64( 0x0000000000000080 );
-      memset_zero_256( (__m256i*)buf + 1, 5 );
+   if (vp == 0) // empty buf, xevan.
+   {
+      casti_m256i(buf, 0) = mm256_bcast128lo_64(0x0000000000000080);
+      memset_zero_256((__m256i *)buf + 1, 5);
       ctx->count0 = ctx->count1 = ctx->count2 = ctx->count3 = 0;
    }
-   else     // half full buf, everyone else.
+   else // half full buf, everyone else.
    {
-    casti_m256i( buf, vp++ ) = mm256_bcast128lo_64( 0x0000000000000080 );
-      memset_zero_256( (__m256i*)buf + vp, 6 - vp );
+      casti_m256i(buf, vp++) = mm256_bcast128lo_64(0x0000000000000080);
+      memset_zero_256((__m256i *)buf + vp, 6 - vp);
    }
 
-    casti_m256i( buf, 6 ) = mm256_bcast_m128(
-                  _mm_insert_epi16( v128_zero, count.u16[0], 7 ) ); 
-    casti_m256i( buf, 7 ) = mm256_bcast_m128( _mm_set_epi16(
-                  0x0200,       count.u16[7], count.u16[6], count.u16[5],
-                  count.u16[4], count.u16[3], count.u16[2], count.u16[1] ) );
+   casti_m256i(buf, 6) = mm256_bcast_m128(
+       _mm_insert_epi16(v128_zero, count.u16[0], 7));
+   casti_m256i(buf, 7) = mm256_bcast_m128(_mm_set_epi16(
+       0x0200, count.u16[7], count.u16[6], count.u16[5],
+       count.u16[4], count.u16[3], count.u16[2], count.u16[1]));
 
-   c512_2way( ctx, buf);
+   c512_2way(ctx, buf);
 
-   casti_m256i( dst, 0 ) = casti_m256i( ctx->h, 0 );
-   casti_m256i( dst, 1 ) = casti_m256i( ctx->h, 1 );
-   casti_m256i( dst, 2 ) = casti_m256i( ctx->h, 2 );
-   casti_m256i( dst, 3 ) = casti_m256i( ctx->h, 3 );
+   casti_m256i(dst, 0) = casti_m256i(ctx->h, 0);
+   casti_m256i(dst, 1) = casti_m256i(ctx->h, 1);
+   casti_m256i(dst, 2) = casti_m256i(ctx->h, 2);
+   casti_m256i(dst, 3) = casti_m256i(ctx->h, 3);
 }
 
-void shavite512_2way_full( shavite512_2way_context *ctx, void *dst,
-                           const void *data, size_t len )
+void shavite512_2way_full(shavite512_2way_context *ctx, void *dst,
+                          const void *data, size_t len)
 {
-    __m256i *h = (__m256i*)ctx->h;
-    v128_t *iv = (v128_t*)IV512;
+   __m256i *h = (__m256i *)ctx->h;
+   v128_t *iv = (v128_t *)IV512;
 
-   h[0] = mm256_bcast_m128( iv[0] );
-   h[1] = mm256_bcast_m128( iv[1] );
-   h[2] = mm256_bcast_m128( iv[2] );
-   h[3] = mm256_bcast_m128( iv[3] );
+   h[0] = mm256_bcast_m128(iv[0]);
+   h[1] = mm256_bcast_m128(iv[1]);
+   h[2] = mm256_bcast_m128(iv[2]);
+   h[3] = mm256_bcast_m128(iv[3]);
 
-   ctx->ptr    =
-   ctx->count0 =
-   ctx->count1 =
-   ctx->count2 =
-   ctx->count3 = 0;
+   ctx->ptr =
+       ctx->count0 =
+           ctx->count1 =
+               ctx->count2 =
+                   ctx->count3 = 0;
 
    unsigned char *buf = ctx->buf;
-   size_t         ptr = ctx->ptr;
+   size_t ptr = ctx->ptr;
 
    // process full blocks and load buf with remainder.
-   while ( len > 0 )
+   while (len > 0)
    {
       size_t clen;
 
       clen = (sizeof ctx->buf) - ptr;
-      if ( clen > len << 1 )
+      if (clen > len << 1)
          clen = len << 1;
-      memcpy( buf + ptr, data, clen );
+      memcpy(buf + ptr, data, clen);
       data = (const unsigned char *)data + clen;
       ptr += clen;
       len -= (clen >> 1);
-      if ( ptr == sizeof ctx->buf )
+      if (ptr == sizeof ctx->buf)
       {
-         if ( ( ctx->count0 = ctx->count0 + 1024 )  == 0 )
+         if ((ctx->count0 = ctx->count0 + 1024) == 0)
          {
-             ctx->count1 = ctx->count1 + 1;
-             if ( ctx->count1 == 0 )
-             {
-                ctx->count2 = ctx->count2 + 1;
-                if ( ctx->count2 == 0 )
-                   ctx->count3 = ctx->count3 + 1;
-             }
+            ctx->count1 = ctx->count1 + 1;
+            if (ctx->count1 == 0)
+            {
+               ctx->count2 = ctx->count2 + 1;
+               if (ctx->count2 == 0)
+                  ctx->count3 = ctx->count3 + 1;
+            }
          }
-         c512_2way( ctx, buf );
+         c512_2way(ctx, buf);
          ptr = 0;
       }
    }
 
-   uint32_t vp = ptr>>5;
+   uint32_t vp = ptr >> 5;
    // Count = { 0, 16, 64, 80 }. Outsize = 16 u32 = 512 bits = 0x0200
    // Count is misaligned to 16 bits and straddles 2 vectors.
    // Use u32 overlay to stage then u16 to load buf.
@@ -505,35 +519,79 @@ void shavite512_2way_full( shavite512_2way_context *ctx, void *dst,
       uint16_t u16[8];
    } count;
 
-   count.u32[0] = ctx->count0 += (ptr << 2);  // ptr/2 * 8
+   count.u32[0] = ctx->count0 += (ptr << 2); // ptr/2 * 8
    count.u32[1] = ctx->count1;
    count.u32[2] = ctx->count2;
    count.u32[3] = ctx->count3;
 
-   if ( vp == 0 )    // empty buf, xevan.
+   if (vp == 0) // empty buf, xevan.
    {
-      casti_m256i( buf, 0 ) = mm256_bcast128lo_64( 0x0000000000000080 );
-      memset_zero_256( (__m256i*)buf + 1, 5 );
+      casti_m256i(buf, 0) = mm256_bcast128lo_64(0x0000000000000080);
+      memset_zero_256((__m256i *)buf + 1, 5);
       ctx->count0 = ctx->count1 = ctx->count2 = ctx->count3 = 0;
    }
-   else     // half full buf, everyone else.
+   else // half full buf, everyone else.
    {
-    casti_m256i( buf, vp++ ) = mm256_bcast128lo_64( 0x0000000000000080 );
-      memset_zero_256( (__m256i*)buf + vp, 6 - vp );
+      casti_m256i(buf, vp++) = mm256_bcast128lo_64(0x0000000000000080);
+      memset_zero_256((__m256i *)buf + vp, 6 - vp);
    }
 
-    casti_m256i( buf, 6 ) = mm256_bcast_m128(
-                  _mm_insert_epi16( v128_zero, count.u16[0], 7 ) );
-    casti_m256i( buf, 7 ) = mm256_bcast_m128( _mm_set_epi16(
-                  0x0200,       count.u16[7], count.u16[6], count.u16[5],
-                  count.u16[4], count.u16[3], count.u16[2], count.u16[1] ) );
+   casti_m256i(buf, 6) = mm256_bcast_m128(
+       _mm_insert_epi16(v128_zero, count.u16[0], 7));
+   casti_m256i(buf, 7) = mm256_bcast_m128(_mm_set_epi16(
+       0x0200, count.u16[7], count.u16[6], count.u16[5],
+       count.u16[4], count.u16[3], count.u16[2], count.u16[1]));
 
-   c512_2way( ctx, buf);
+   c512_2way(ctx, buf);
 
-   casti_m256i( dst, 0 ) = casti_m256i( ctx->h, 0 );
-   casti_m256i( dst, 1 ) = casti_m256i( ctx->h, 1 );
-   casti_m256i( dst, 2 ) = casti_m256i( ctx->h, 2 );
-   casti_m256i( dst, 3 ) = casti_m256i( ctx->h, 3 );
+   casti_m256i(dst, 0) = casti_m256i(ctx->h, 0);
+   casti_m256i(dst, 1) = casti_m256i(ctx->h, 1);
+   casti_m256i(dst, 2) = casti_m256i(ctx->h, 2);
+   casti_m256i(dst, 3) = casti_m256i(ctx->h, 3);
 }
-   
+
+#else // __AES__
+
+// Fallback implementation when AES-NI is not available
+// Uses the standard SPH implementation in 2-way parallel fashion
+
+#include "sph_shavite.h"
+
+void shavite512_2way_init(shavite512_2way_context *ctx) {}
+
+void shavite512_2way_update(shavite512_2way_context *ctx, const void *data,
+                            size_t len) {}
+
+void shavite512_2way_close(shavite512_2way_context *ctx, void *dst) {}
+
+void shavite512_2way_update_close(shavite512_2way_context *ctx, void *dst,
+                                  const void *data, size_t len)
+{
+   // Fallback to single-threaded processing of both lanes
+   uint64_t *hash0 = (uint64_t *)dst;
+   uint64_t *hash1 = hash0 + 8;
+   const uint64_t *data0 = (const uint64_t *)data;
+   const uint64_t *data1 = data0 + (len / sizeof(uint64_t)) / 2;
+
+   sph_shavite512_context ctx_shavite;
+
+   // Process first lane
+   sph_shavite512_init(&ctx_shavite);
+   sph_shavite512(&ctx_shavite, data0, len / 2);
+   sph_shavite512_close(&ctx_shavite, hash0);
+
+   // Process second lane
+   sph_shavite512_init(&ctx_shavite);
+   sph_shavite512(&ctx_shavite, data1, len / 2);
+   sph_shavite512_close(&ctx_shavite, hash1);
+}
+
+void shavite512_2way_full(shavite512_2way_context *ctx, void *dst,
+                          const void *data, size_t len)
+{
+   shavite512_2way_update_close(ctx, dst, data, len);
+}
+
+#endif // __AES__
+
 #endif // AVX2

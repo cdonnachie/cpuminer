@@ -3,31 +3,31 @@
 
 #include <cpuminer-config.h>
 
-#if !( defined(__SSE2__) || ( defined(__aarch64__) && defined(__ARM_NEON) ) )
-#warning "Unknown or unsupported CPU, requires x86_64 with SSE2 or AArch64 with NEON." 
+#if !(defined(__SSE2__) || (defined(__aarch64__) && defined(__ARM_NEON)))
+#warning "Unknown or unsupported CPU, requires x86_64 with SSE2 or AArch64 with NEON."
 #endif
 
 #if defined(__x86_64__)
-   #define USER_AGENT_ARCH "x64"     // Intel, AMD x86_64
+#define USER_AGENT_ARCH "x64" // Intel, AMD x86_64
 #elif defined(__aarch64__)
-   #define USER_AGENT_ARCH "arm"     // AArch64
-//#elif
-//  #define USER_AGENT_ARCH "r5"     // RISC-V             
+#define USER_AGENT_ARCH "arm" // AArch64
+// #elif
+//   #define USER_AGENT_ARCH "r5"     // RISC-V
 #else
-   #define USER_AGENT_ARCH
+#define USER_AGENT_ARCH
 #endif
 
 #if defined(__linux)
-   #define USER_AGENT_OS   "L"      // GNU Linux
+#define USER_AGENT_OS "L" // GNU Linux
 #elif defined(WIN32)
-   #define USER_AGENT_OS   "W"      // MS Windows
+#define USER_AGENT_OS "W" // MS Windows
 #elif defined(__APPLE__)
-   #define USER_AGENT_OS   "M"      // Apple MacOS
+#define USER_AGENT_OS "M" // Apple MacOS
 // is there a generic BSD macro?
-#elif defined(__unix__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) 
-   #define USER_AGENT_OS   "U"      // BSD unix
+#elif defined(__unix__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#define USER_AGENT_OS "U" // BSD unix
 #else
-   #define USER_AGENT_OS
+#define USER_AGENT_OS
 #endif
 
 #define USER_AGENT PACKAGE_NAME "-" PACKAGE_VERSION "-" USER_AGENT_ARCH USER_AGENT_OS
@@ -35,7 +35,7 @@
 /*
 #ifdef _MSC_VER
 
-#undef USE_ASM 
+#undef USE_ASM
 #ifdef NOASM
 #undef USE_ASM
 #endif
@@ -59,12 +59,12 @@
 #include <curl/curl.h>
 
 #ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
+#include <stdlib.h>
+#include <stddef.h>
 #else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #endif
 
 // no mm_maloc for Neon
@@ -72,17 +72,17 @@
 
 #include <mm_malloc.h>
 
-#define mm_malloc( nbytes, alignment )    _mm_malloc( nbytes, alignment )
-#define mm_free                           _mm_free
+#define mm_malloc(nbytes, alignment) _mm_malloc(nbytes, alignment)
+#define mm_free _mm_free
 
 #else
 
-#define mm_malloc( nbytes, alignment )    malloc( nbytes )
-#define mm_free                           free
+#define mm_malloc(nbytes, alignment) malloc(nbytes)
+#define mm_free free
 
 #endif
 
-//TODO for windows
+// TODO for windows
 static inline bool is_root()
 {
 #if defined(WIN32)
@@ -96,53 +96,55 @@ static inline bool is_root()
 #ifndef min
 #define min(a,b) (a>b ? (b) :(a))
 #endif
-#ifndef max 
+#ifndef max
 #define max(a,b) (a<b ? (b) : (a))
 #endif
 */
 
-//#ifdef HAVE_ALLOCA_H
-//# include <alloca.h>
-//#elif !defined alloca
-# ifdef __GNUC__
-//#  define alloca __builtin_alloca
-# elif defined _AIX
-#  define alloca __alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
+// #ifdef HAVE_ALLOCA_H
+// # include <alloca.h>
+// #elif !defined alloca
+#ifdef __GNUC__
+// #  define alloca __builtin_alloca
+#elif defined _AIX
+#define alloca __alloca
+#elif defined _MSC_VER
+#include <malloc.h>
+#define alloca _alloca
+#elif !defined HAVE_ALLOCA
+#ifdef __cplusplus
 extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-//#endif
+#endif
+    void *alloca(size_t);
+#endif
+// #endif
 
 // keyboard beep
-static const char ASCII_BELL =  '\a';
+static const char ASCII_BELL = '\a';
 
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
-#define LOG_BLUE  0x10 /* unique value */
-#define LOG_MAJR  0x11 /* unique value */
-#define LOG_MINR  0x12 /* unique value */
+#define LOG_BLUE 0x10  /* unique value */
+#define LOG_MAJR 0x11  /* unique value */
+#define LOG_MINR 0x12  /* unique value */
 #define LOG_GREEN 0x13 /* unique value */
-#define LOG_PINK  0x14 /* unique value */
+#define LOG_PINK 0x14  /* unique value */
 #else
-enum {
+enum
+{
    LOG_CRIT,
    LOG_ERR,
-	LOG_WARNING,
-	LOG_NOTICE,
-	LOG_INFO,
-	LOG_DEBUG,
+   LOG_WARNING,
+   LOG_NOTICE,
+   LOG_INFO,
+   LOG_DEBUG,
    /* custom notices */
-	LOG_BLUE  = 0x10,
-   LOG_MAJR  = 0x11,
-   LOG_MINR  = 0x12,
+   LOG_BLUE = 0x10,
+   LOG_MAJR = 0x11,
+   LOG_MINR = 0x12,
    LOG_GREEN = 0x13,
-   LOG_PINK  = 0x14 };
+   LOG_PINK = 0x14
+};
 #endif
 
 #define WORK_ALIGNMENT 64
@@ -151,24 +153,24 @@ enum {
 // for large vectors. Physical block size must be extended by alignment number
 // of bytes when allocated. free() should use the physical pointer returned by
 // malloc(), not the aligned pointer. All others shoujld use the logical,
-// aligned, pointer returned by this function. 
-static inline void *align_ptr( const void *ptr, const uint64_t alignment )
+// aligned, pointer returned by this function.
+static inline void *align_ptr(const void *ptr, const uint64_t alignment)
 {
-  const uint64_t mask = alignment - 1;
-  return (void*)( ( ((const uint64_t)ptr) + mask ) & (~mask) );
+   const uint64_t mask = alignment - 1;
+   return (void *)((((const uint64_t)ptr) + mask) & (~mask));
 }
 
-extern bool is_power_of_2( int n );
+extern bool is_power_of_2(int n);
 
 static inline bool is_windows(void)
 {
 #ifdef WIN32
-	return true;
+   return true;
 #else
-	return false;
+   return false;
 #endif
 }
- 
+
 #include "compat.h"
 
 #ifndef ARRAY_SIZE
@@ -190,16 +192,17 @@ static inline uint32_t swab32(uint32_t x)
 #ifdef WANT_BUILTIN_BSWAP
    return __builtin_bswap32(x);
 #else
-   return ( ( (x) << 24 ) & 0xff000000u ) | ( ( (x) <<  8 ) & 0x00ff0000u )
-        | ( ( (x) >>  8 ) & 0x0000ff00u ) | ( ( (x) >> 24 ) & 0x000000ffu )
-
+   return (((x) << 24) & 0xff000000u) | (((x) << 8) & 0x00ff0000u) | (((x) >> 8) & 0x0000ff00u) | (((x) >> 24) & 0x000000ffu);
 
 //   return bswap_32(v);
 #endif
 }
 
 // Swap any two variables of the same type without using a temp
-#define swap_vars(a,b) a^=b; b^=a; a^=b;
+#define swap_vars(a, b) \
+   a ^= b;              \
+   b ^= a;              \
+   a ^= b;
 
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
@@ -210,74 +213,71 @@ typedef unsigned char uchar;
 #if !HAVE_DECL_BE32DEC
 static inline uint32_t be32dec(const void *pp)
 {
-	const uint8_t *p = (uint8_t const *)pp;
-	return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
-	    ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
+   const uint8_t *p = (uint8_t const *)pp;
+   return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
+           ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
 }
 #endif
 
 #if !HAVE_DECL_LE32DEC
 static inline uint32_t le32dec(const void *pp)
 {
-	const uint8_t *p = (uint8_t const *)pp;
-	return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
-	    ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
+   const uint8_t *p = (uint8_t const *)pp;
+   return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
+           ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
 }
 #endif
 
 #if !HAVE_DECL_BE32ENC
 static inline void be32enc(void *pp, uint32_t x)
 {
-	uint8_t *p = (uint8_t *)pp;
-	p[3] = x & 0xff;
-	p[2] = (x >> 8) & 0xff;
-	p[1] = (x >> 16) & 0xff;
-	p[0] = (x >> 24) & 0xff;
+   uint8_t *p = (uint8_t *)pp;
+   p[3] = x & 0xff;
+   p[2] = (x >> 8) & 0xff;
+   p[1] = (x >> 16) & 0xff;
+   p[0] = (x >> 24) & 0xff;
 }
 #endif
 
 // This is a poorman's SIMD instruction, use 64 bit instruction to encode 2
 // uint32_t. This function flips endian on two adjacent 32 bit quantities
 // aligned to 64 bits. If source is LE output is BE, and vice versa.
-static inline void swab32_x2( uint64_t* dst, uint64_t src )
+static inline void swab32_x2(uint64_t *dst, uint64_t src)
 {
-   *dst =   ( ( src & 0xff000000ff000000 ) >> 24 )
-          | ( ( src & 0x00ff000000ff0000 ) >>  8 )
-          | ( ( src & 0x0000ff000000ff00 ) <<  8 )
-          | ( ( src & 0x000000ff000000ff ) << 24 );
+   *dst = ((src & 0xff000000ff000000) >> 24) | ((src & 0x00ff000000ff0000) >> 8) | ((src & 0x0000ff000000ff00) << 8) | ((src & 0x000000ff000000ff) << 24);
 }
 
-static inline void swab32_array( uint32_t* dst_p, uint32_t* src_p, int n )
+static inline void swab32_array(uint32_t *dst_p, uint32_t *src_p, int n)
 {
-   for ( int i = 0; i < n/2; i++ )
-      swab32_x2( &((uint64_t*)dst_p)[i], ((uint64_t*)src_p)[i] );
+   for (int i = 0; i < n / 2; i++)
+      swab32_x2(&((uint64_t *)dst_p)[i], ((uint64_t *)src_p)[i]);
 }
 
 #if !HAVE_DECL_LE32ENC
 static inline void le32enc(void *pp, uint32_t x)
 {
-	uint8_t *p = (uint8_t *)pp;
-	p[0] = x & 0xff;
-	p[1] = (x >> 8) & 0xff;
-	p[2] = (x >> 16) & 0xff;
-	p[3] = (x >> 24) & 0xff;
+   uint8_t *p = (uint8_t *)pp;
+   p[0] = x & 0xff;
+   p[1] = (x >> 8) & 0xff;
+   p[2] = (x >> 16) & 0xff;
+   p[3] = (x >> 24) & 0xff;
 }
 #endif
 
 #if !HAVE_DECL_LE16DEC
 static inline uint16_t le16dec(const void *pp)
 {
-	const uint8_t *p = (uint8_t const *)pp;
-	return ((uint16_t)(p[0]) + ((uint16_t)(p[1]) << 8));
+   const uint8_t *p = (uint8_t const *)pp;
+   return ((uint16_t)(p[0]) + ((uint16_t)(p[1]) << 8));
 }
 #endif
 
 #if !HAVE_DECL_LE16ENC
 static inline void le16enc(void *pp, uint16_t x)
 {
-	uint8_t *p = (uint8_t *)pp;
-	p[0] = x & 0xff;
-	p[1] = (x >> 8) & 0xff;
+   uint8_t *p = (uint8_t *)pp;
+   p[0] = x & 0xff;
+   p[1] = (x >> 8) & 0xff;
 }
 #endif
 
@@ -289,11 +289,11 @@ static inline void le16enc(void *pp, uint16_t x)
 #define JSON_LOADF(path, err_ptr) json_load_file(path, err_ptr)
 #endif
 
-json_t* json_load_url(char* cfg_url, json_error_t *err);
+json_t *json_load_url(char *cfg_url, json_error_t *err);
 
-//void sha256_init(uint32_t *state);
-//void sha256_transform(uint32_t *state, const uint32_t *block, int swap);
-//void sha256d(unsigned char *hash, const unsigned char *data, int len);
+// void sha256_init(uint32_t *state);
+// void sha256_transform(uint32_t *state, const uint32_t *block, int swap);
+// void sha256d(unsigned char *hash, const unsigned char *data, int len);
 
 #ifdef USE_ASM
 #if defined(__ARM_NEON__) || defined(__i386__) || defined(__x86_64__)
@@ -302,7 +302,7 @@ int sha256_use_4way();
 void sha256_init_4way(uint32_t *state);
 void sha256_transform_4way(uint32_t *state, const uint32_t *block, int swap);
 #endif
-//#if defined(__x86_64__) && defined(USE_AVX2)
+// #if defined(__x86_64__) && defined(USE_AVX2)
 #if defined(__x86_64__) && defined(__AVX2__)
 #define HAVE_SHA256_8WAY 1
 int sha256_use_8way();
@@ -316,84 +316,83 @@ struct work;
 void work_free(struct work *w);
 void work_copy(struct work *dest, const struct work *src);
 
-
-
 /* api related */
 void *api_thread(void *userdata);
 
-struct cpu_info {
-	int thr_id;
-	int accepted;
-	int rejected;
-	double khashes;
-	bool has_monitoring;
-	float cpu_temp;
-	int cpu_fan;
-	uint32_t cpu_clock;
+struct cpu_info
+{
+   int thr_id;
+   int accepted;
+   int rejected;
+   double khashes;
+   bool has_monitoring;
+   float cpu_temp;
+   int cpu_fan;
+   uint32_t cpu_clock;
 };
 
-struct thr_api {
-	int id;
-	pthread_t pth;
-	struct thread_q	*q;
+struct thr_api
+{
+   int id;
+   pthread_t pth;
+   struct thread_q *q;
 };
 /* end of api */
 
-
-#define JSON_RPC_LONGPOLL	(1 << 0)
-#define JSON_RPC_QUIET_404	(1 << 1)
-#define JSON_RPC_IGNOREERR  (1 << 2)
+#define JSON_RPC_LONGPOLL (1 << 0)
+#define JSON_RPC_QUIET_404 (1 << 1)
+#define JSON_RPC_IGNOREERR (1 << 2)
 
 #define JSON_BUF_LEN 512
 
-#define CL_N    "\x1B[0m"
-#define CL_RED  "\x1B[31m"
-#define CL_GRN  "\x1B[32m"
-#define CL_YLW  "\x1B[33m"  // dark yellow
-#define CL_BLU  "\x1B[34m"
-#define CL_MAG  "\x1B[35m"  // purple
-#define CL_CYN  "\x1B[36m"
+#define CL_N "\x1B[0m"
+#define CL_RED "\x1B[31m"
+#define CL_GRN "\x1B[32m"
+#define CL_YLW "\x1B[33m" // dark yellow
+#define CL_BLU "\x1B[34m"
+#define CL_MAG "\x1B[35m" // purple
+#define CL_CYN "\x1B[36m"
 
-#define CL_BLK  "\x1B[22;30m" /* black */
-#define CL_RD2  "\x1B[22;31m" /* red */
-#define CL_GR2  "\x1B[22;32m" /* green */
-#define CL_BRW  "\x1B[22;33m" /* brown */
-#define CL_BL2  "\x1B[22;34m" /* blue */
-#define CL_MA2  "\x1B[22;35m" /* purple */
-#define CL_CY2  "\x1B[22;36m" /* cyan */
-#define CL_SIL  "\x1B[22;37m" /* gray */
+#define CL_BLK "\x1B[22;30m" /* black */
+#define CL_RD2 "\x1B[22;31m" /* red */
+#define CL_GR2 "\x1B[22;32m" /* green */
+#define CL_BRW "\x1B[22;33m" /* brown */
+#define CL_BL2 "\x1B[22;34m" /* blue */
+#define CL_MA2 "\x1B[22;35m" /* purple */
+#define CL_CY2 "\x1B[22;36m" /* cyan */
+#define CL_SIL "\x1B[22;37m" /* gray */
 
 #ifdef WIN32
-#define CL_GRY  "\x1B[01;30m" /* dark gray */
+#define CL_GRY "\x1B[01;30m" /* dark gray */
 #else
-#define CL_GRY  "\x1B[90m"    /* dark gray selectable in putty */
+#define CL_GRY "\x1B[90m" /* dark gray selectable in putty */
 #endif
-#define CL_LRD  "\x1B[01;31m" /* bright red */
-#define CL_LGR  "\x1B[01;32m" /* bright green */
-#define CL_YL2  "\x1B[01;33m" /* bright yellow */
-#define CL_LBL  "\x1B[01;34m" /* light blue */
-#define CL_LMA  "\x1B[01;35m" /* light magenta */
-#define CL_LCY  "\x1B[01;36m" /* light cyan */
+#define CL_LRD "\x1B[01;31m" /* bright red */
+#define CL_LGR "\x1B[01;32m" /* bright green */
+#define CL_YL2 "\x1B[01;33m" /* bright yellow */
+#define CL_LBL "\x1B[01;34m" /* light blue */
+#define CL_LMA "\x1B[01;35m" /* light magenta */
+#define CL_LCY "\x1B[01;36m" /* light cyan */
 
-#define CL_WHT  "\x1B[01;37m" /* white */
+#define CL_WHT "\x1B[01;37m" /* white */
 
-void   applog(int prio, const char *fmt, ...);
-void   applog2(int prio, const char *fmt, ...);
-void   applog_nl( const char *fmt, ... );
-void   restart_threads(void);
-extern json_t *json_rpc_call( CURL *curl, const char *url, const char *userpass,
-                	const char *rpc_req, int *curl_err, int flags );
+void applog(int prio, const char *fmt, ...);
+void applog2(int prio, const char *fmt, ...);
+void applog_nl(const char *fmt, ...);
+void restart_threads(void);
+extern json_t *json_rpc_call(CURL *curl, const char *url, const char *userpass,
+                             const char *rpc_req, int *curl_err, int flags);
 extern void cbin2hex(char *out, const char *in, size_t len);
-void   bin2hex( char *s, const unsigned char *p, size_t len );
-char  *abin2hex( const unsigned char *p, size_t len );
-char  *bebin2hex( const unsigned char *p, size_t len );
-bool   hex2bin( unsigned char *p, const char *hexstr, const size_t len );
-bool   jobj_binary( const json_t *obj, const char *key, void *buf,
-                    size_t buflen );
-int    varint_encode( unsigned char *p, uint64_t n );
-size_t address_to_script( unsigned char *out, size_t outsz, const char *addr );
-int    timeval_subtract( struct timeval *result, struct timeval *x,
-                           struct timeval *y);
+void bin2hex(char *s, const unsigned char *p, size_t len);
+char *abin2hex(const unsigned char *p, size_t len);
+char *bebin2hex(const unsigned char *p, size_t len);
+bool hex2bin(unsigned char *p, const char *hexstr, const size_t len);
+bool jobj_binary(const json_t *obj, const char *key, void *buf,
+                 size_t buflen);
+int varint_encode(unsigned char *p, uint64_t n);
+size_t address_to_script(unsigned char *out, size_t outsz, const char *addr);
+int timeval_subtract(struct timeval *result, struct timeval *x,
+                     struct timeval *y);
 
 // Segwit BEGIN
 extern void memrev(unsigned char *p, size_t len);
@@ -414,31 +413,32 @@ extern const long double exp96;  // 2**96
 extern const long double exp128; // 2**128
 extern const long double exp160; // 2**160
 
-bool   fulltest( const uint32_t *hash, const uint32_t *target );
-bool   valid_hash( const void*, const void* );
+bool fulltest(const uint32_t *hash, const uint32_t *target);
+bool valid_hash(const void *, const void *);
 
-extern double hash_to_diff( const void* );
-extern void diff_to_hash( uint32_t*, const double );
-extern double nbits_to_diff( uint32_t );
+extern double hash_to_diff(const void *);
+extern void diff_to_hash(uint32_t *, const double);
+extern double nbits_to_diff(uint32_t);
 
-double hash_target_ratio( uint32_t* hash, uint32_t* target );
-void   work_set_target_ratio( struct work* work, const void *hash );
+double hash_target_ratio(uint32_t *hash, uint32_t *target);
+void work_set_target_ratio(struct work *work, const void *hash);
 
-struct thr_info {
-        int id;
-        pthread_t pth;
-        pthread_attr_t attr;
-        struct thread_q *q;
-        struct cpu_info cpu;
+struct thr_info
+{
+   int id;
+   pthread_t pth;
+   pthread_attr_t attr;
+   struct thread_q *q;
+   struct cpu_info cpu;
 };
 
-//int test_hash_and_submit( struct work *work, const void *hash,
-//                           struct thr_info *thr );
+// int test_hash_and_submit( struct work *work, const void *hash,
+//                            struct thr_info *thr );
 
-bool submit_solution( struct work *work, const void *hash,
-                      struct thr_info *thr );
+bool submit_solution(struct work *work, const void *hash,
+                     struct thr_info *thr);
 
-void   get_currentalgo( char* buf, int sz );
+void get_currentalgo(char *buf, int sz);
 /*
 bool   has_sha();
 bool   has_aes_ni();
@@ -460,37 +460,37 @@ float cpu_temp( int core );
 
 struct work
 {
-   uint32_t target[8] __attribute__ ((aligned (64)));
-	uint32_t data[48] __attribute__ ((aligned (64)));
-	double targetdiff;
-	double sharediff;
+   uint32_t target[8] __attribute__((aligned(64)));
+   uint32_t data[48] __attribute__((aligned(64)));
+   double targetdiff;
+   double sharediff;
    double stratum_diff;
-	int height;
-	char *txs;
+   int height;
+   char *txs;
    int tx_count;
    char *workid;
-	char *job_id;
-	size_t xnonce2_len;
-	unsigned char *xnonce2;
+   char *job_id;
+   size_t xnonce2_len;
+   unsigned char *xnonce2;
    bool sapling;
    bool stale;
-} __attribute__ ((aligned (WORK_ALIGNMENT)));
+} __attribute__((aligned(WORK_ALIGNMENT)));
 
 struct stratum_job
 {
-	unsigned char prevhash[32];
+   unsigned char prevhash[32];
    unsigned char final_sapling_hash[32];
    char *job_id;
-	size_t coinbase_size;
-	unsigned char *coinbase;
-	unsigned char *xnonce2;
-	int merkle_count;
+   size_t coinbase_size;
+   unsigned char *coinbase;
+   unsigned char *xnonce2;
+   int merkle_count;
    int merkle_buf_size;
    unsigned char **merkle;
-	unsigned char version[4];
-	unsigned char nbits[4];
-	unsigned char ntime[4];
-	double diff;
+   unsigned char version[4];
+   unsigned char nbits[4];
+   unsigned char ntime[4];
+   double diff;
    bool clean;
    // for x16rt-veil
    unsigned char extra[64];
@@ -500,33 +500,34 @@ struct stratum_job
    unsigned char denom10000[32];
    unsigned char proofoffullnode[32];
 
-} __attribute__ ((aligned (64)));
+} __attribute__((aligned(64)));
 
-struct stratum_ctx {
-	char *url;
+struct stratum_ctx
+{
+   char *url;
 
-	CURL *curl;
-	char *curl_url;
-	char curl_err_str[CURL_ERROR_SIZE];
-	curl_socket_t sock;
-	size_t sockbuf_size;
-	char *sockbuf;
-	pthread_mutex_t sock_lock;
+   CURL *curl;
+   char *curl_url;
+   char curl_err_str[CURL_ERROR_SIZE];
+   curl_socket_t sock;
+   size_t sockbuf_size;
+   char *sockbuf;
+   pthread_mutex_t sock_lock;
 
-	double next_diff;
-	double sharediff;
+   double next_diff;
+   double sharediff;
 
-	char *session_id;
-	size_t xnonce1_size;
-	unsigned char *xnonce1;
-	size_t xnonce2_size;
-	struct stratum_job job;
-	struct work work __attribute__ ((aligned (64)));
-	pthread_mutex_t work_lock;
+   char *session_id;
+   size_t xnonce1_size;
+   unsigned char *xnonce1;
+   size_t xnonce2_size;
+   struct stratum_job job;
+   struct work work __attribute__((aligned(64)));
+   pthread_mutex_t work_lock;
 
    int block_height;
-   bool new_job;  
-} __attribute__ ((aligned (64)));
+   bool new_job;
+} __attribute__((aligned(64)));
 
 bool stratum_socket_full(struct stratum_ctx *sctx, int timeout);
 bool stratum_send_line(struct stratum_ctx *sctx, char *s);
@@ -536,8 +537,7 @@ void stratum_disconnect(struct stratum_ctx *sctx);
 bool stratum_subscribe(struct stratum_ctx *sctx);
 bool stratum_authorize(struct stratum_ctx *sctx, const char *user, const char *pass);
 bool stratum_handle_method(struct stratum_ctx *sctx, const char *s);
-bool stratum_suggest_difficulty( struct stratum_ctx *sctx, double diff );
-
+bool stratum_suggest_difficulty(struct stratum_ctx *sctx, double diff);
 
 extern bool aes_ni_supported;
 extern char *rpc_user;
@@ -560,9 +560,9 @@ void applog_hash(void *hash);
 void format_hashrate(double hashrate, char *output);
 void print_hash_tests(void);
 
-void scale_hash_for_display ( double* hashrate, char* units );
-void format_number_si( double* hashrate, char* si_units );
-void report_summary_log( bool force );
+void scale_hash_for_display(double *hashrate, char *units);
+void format_number_si(double *hashrate, char *si_units);
+void report_summary_log(bool force);
 
 /*
 struct thr_info {
@@ -574,220 +574,224 @@ struct thr_info {
 };
 */
 
-struct work_restart {
-        volatile uint8_t restart;
-        char padding[128 - sizeof(uint8_t)];
+struct work_restart
+{
+   volatile uint8_t restart;
+   char padding[128 - sizeof(uint8_t)];
 };
 
-enum workio_commands {
-        WC_GET_WORK,
-        WC_SUBMIT_WORK,
+enum workio_commands
+{
+   WC_GET_WORK,
+   WC_SUBMIT_WORK,
 };
 
-struct workio_cmd {
-        enum workio_commands cmd;
-        struct thr_info *thr;
-        union {
-                struct work *work;
-        } u;
+struct workio_cmd
+{
+   enum workio_commands cmd;
+   struct thr_info *thr;
+   union
+   {
+      struct work *work;
+   } u;
 };
 
-uint32_t* get_stratum_job_ntime();
+uint32_t *get_stratum_job_ntime();
 
-enum algos {
-        ALGO_NULL,
-        ALGO_ALLIUM,
-        ALGO_ANIME,
-        ALGO_ARGON2D250,
-        ALGO_ARGON2D500,
-        ALGO_ARGON2D4096,
-        ALGO_AXIOM,       
-        ALGO_BLAKE,       
-        ALGO_BLAKE2B,
-        ALGO_BLAKE2S,     
-        ALGO_BLAKECOIN,
-        ALGO_BMW,        
-        ALGO_BMW512,
-        ALGO_C11,         
-        ALGO_DEEP,
-        ALGO_DMD_GR,
-        ALGO_FLEX,
-        ALGO_GROESTL,
-        ALGO_HEX,
-        ALGO_HMQ1725,
-        ALGO_JHA,
-        ALGO_KECCAK,
-        ALGO_KECCAKC,
-        ALGO_LBRY,
-        ALGO_LYRA2H,
-        ALGO_LYRA2RE,       
-        ALGO_LYRA2REV2,   
-        ALGO_LYRA2REV3,
-        ALGO_LYRA2Z,
-        ALGO_LYRA2Z330,
-        ALGO_M7M,
-        ALGO_MINOTAUR,
-        ALGO_MINOTAURX,
-        ALGO_MYR_GR,      
-        ALGO_NEOSCRYPT,
-        ALGO_NIST5,       
-        ALGO_PENTABLAKE,  
-        ALGO_PHI1612,
-        ALGO_PHI2,
-        ALGO_POLYTIMOS,
-        ALGO_POWER2B,
-        ALGO_QUARK,
-        ALGO_QUBIT,       
-        ALGO_SCRYPT,
-        ALGO_SHA256D,
-        ALGO_SHA256DT,
-        ALGO_SHA256Q,
-        ALGO_SHA256T,
-        ALGO_SHA3D,
-        ALGO_SHA512256D,
-        ALGO_SHAVITE3,    
-        ALGO_SKEIN,       
-        ALGO_SKEIN2,      
-        ALGO_SKUNK,
-        ALGO_SONOA,
-        ALGO_TIMETRAVEL,
-        ALGO_TIMETRAVEL10,
-        ALGO_TRIBUS,
-        ALGO_VANILLA,
-        ALGO_VELTOR,
-        ALGO_VERTHASH,
-        ALGO_WHIRLPOOL,
-        ALGO_WHIRLPOOLX,
-        ALGO_X11,
-        ALGO_X11EVO,         
-        ALGO_X11GOST,
-        ALGO_X12,
-        ALGO_X13,         
-        ALGO_X13BCD,
-        ALGO_X13SM3,
-        ALGO_X14,        
-        ALGO_X15,       
-        ALGO_X16R,
-        ALGO_X16RV2,
-        ALGO_X16RT,
-        ALGO_X16RT_VEIL,
-        ALGO_X16S,
-        ALGO_X17,
-        ALGO_X20R,
-        ALGO_X21S,
-        ALGO_X22I,
-        ALGO_X25X,
-        ALGO_XEVAN,
-        ALGO_YESCRYPT,
-        ALGO_YESCRYPTR8,
-        ALGO_YESCRYPTR8G,
-        ALGO_YESCRYPTR16,
-        ALGO_YESCRYPTR32,
-        ALGO_YESPOWER,
-        ALGO_YESPOWERR16,
-        ALGO_YESPOWER_B2B,
-        ALGO_ZR5,
-        ALGO_COUNT
+enum algos
+{
+   ALGO_NULL,
+   ALGO_ALLIUM,
+   ALGO_ANIME,
+   ALGO_ARGON2D250,
+   ALGO_ARGON2D500,
+   ALGO_ARGON2D4096,
+   ALGO_AXIOM,
+   ALGO_BLAKE,
+   ALGO_BLAKE2B,
+   ALGO_BLAKE2S,
+   ALGO_BLAKECOIN,
+   ALGO_BMW,
+   ALGO_BMW512,
+   ALGO_C11,
+   ALGO_DEEP,
+   ALGO_DMD_GR,
+   ALGO_FLEX,
+   ALGO_GROESTL,
+   ALGO_HEX,
+   ALGO_HMQ1725,
+   ALGO_JHA,
+   ALGO_KECCAK,
+   ALGO_KECCAKC,
+   ALGO_LBRY,
+   ALGO_LYRA2H,
+   ALGO_LYRA2RE,
+   ALGO_LYRA2REV2,
+   ALGO_LYRA2REV3,
+   ALGO_LYRA2Z,
+   ALGO_LYRA2Z330,
+   ALGO_M7M,
+   ALGO_MINOTAUR,
+   ALGO_MINOTAURX,
+   ALGO_MYR_GR,
+   ALGO_NEOSCRYPT,
+   ALGO_NIST5,
+   ALGO_PENTABLAKE,
+   ALGO_PHI1612,
+   ALGO_PHI2,
+   ALGO_POLYTIMOS,
+   ALGO_POWER2B,
+   ALGO_QUARK,
+   ALGO_QUBIT,
+   ALGO_SCRYPT,
+   ALGO_SHA256D,
+   ALGO_SHA256DT,
+   ALGO_SHA256Q,
+   ALGO_SHA256T,
+   ALGO_SHA3D,
+   ALGO_SHA512256D,
+   ALGO_SHAVITE3,
+   ALGO_SKEIN,
+   ALGO_SKEIN2,
+   ALGO_SKUNK,
+   ALGO_SONOA,
+   ALGO_TIMETRAVEL,
+   ALGO_TIMETRAVEL10,
+   ALGO_TRIBUS,
+   ALGO_VANILLA,
+   ALGO_VELTOR,
+   ALGO_VERTHASH,
+   ALGO_WHIRLPOOL,
+   ALGO_WHIRLPOOLX,
+   ALGO_X11,
+   ALGO_X11EVO,
+   ALGO_X11GOST,
+   ALGO_X12,
+   ALGO_X13,
+   ALGO_X13BCD,
+   ALGO_X13SM3,
+   ALGO_X14,
+   ALGO_X15,
+   ALGO_X16R,
+   ALGO_X16RV2,
+   ALGO_X16RT,
+   ALGO_X16RT_VEIL,
+   ALGO_X16S,
+   ALGO_X17,
+   ALGO_X20R,
+   ALGO_X21S,
+   ALGO_X22I,
+   ALGO_X25X,
+   ALGO_XEVAN,
+   ALGO_YESCRYPT,
+   ALGO_YESCRYPTR8,
+   ALGO_YESCRYPTR8G,
+   ALGO_YESCRYPTR16,
+   ALGO_YESCRYPTR32,
+   ALGO_YESPOWER,
+   ALGO_YESPOWERR16,
+   ALGO_YESPOWER_B2B,
+   ALGO_ZR5,
+   ALGO_COUNT
 };
 
 // This list must be in exactly the same order as above.
-static const char* const algo_names[] = {
-        NULL,
-        "allium",
-        "anime",
-        "argon2d250",
-        "argon2d500",
-        "argon2d4096",
-        "axiom",
-        "blake",
-        "blake2b",
-        "blake2s",
-        "blakecoin",
-        "bmw",
-        "bmw512",
-        "c11",
-        "deep",
-        "dmd-gr",
-        "flex",
-        "groestl",
-        "hex",
-        "hmq1725",
-        "jha",
-        "keccak",
-        "keccakc",
-        "lbry",
-        "lyra2h",
-        "lyra2re",
-        "lyra2rev2",
-        "lyra2rev3",
-        "lyra2z",
-        "lyra2z330",
-        "m7m",
-        "minotaur",
-        "minotaurx",
-        "myr-gr",
-        "neoscrypt",
-        "nist5",
-        "pentablake",
-        "phi1612",
-        "phi2",
-        "polytimos",
-        "power2b",
-        "quark",
-        "qubit",
-        "scrypt",
-        "sha256d",
-        "sha256dt",
-        "sha256q",
-        "sha256t",
-        "sha3d",
-        "sha512256d",
-        "shavite3",
-        "skein",
-        "skein2",
-        "skunk",
-        "sonoa",
-        "timetravel",
-        "timetravel10",
-        "tribus",
-        "vanilla",
-        "veltor",
-        "verthash",
-        "whirlpool",
-        "whirlpoolx",
-        "x11",
-        "x11evo",
-        "x11gost",
-        "x12",
-        "x13",
-        "x13bcd",
-        "x13sm3",
-        "x14",
-        "x15",
-        "x16r",
-        "x16rv2",
-        "x16rt",
-        "x16rt-veil",
-        "x16s",
-        "x17",
-        "x20r",
-        "x21s",
-        "x22i",
-        "x25x",
-        "xevan",
-        "yescrypt",
-        "yescryptr8",
-        "yescryptr8g",
-        "yescryptr16",
-        "yescryptr32",
-        "yespower",
-        "yespowerr16",
-        "yespower-b2b",
-        "zr5",
-        "\0"
-};
+static const char *const algo_names[] = {
+    NULL,
+    "allium",
+    "anime",
+    "argon2d250",
+    "argon2d500",
+    "argon2d4096",
+    "axiom",
+    "blake",
+    "blake2b",
+    "blake2s",
+    "blakecoin",
+    "bmw",
+    "bmw512",
+    "c11",
+    "deep",
+    "dmd-gr",
+    "flex",
+    "groestl",
+    "hex",
+    "hmq1725",
+    "jha",
+    "keccak",
+    "keccakc",
+    "lbry",
+    "lyra2h",
+    "lyra2re",
+    "lyra2rev2",
+    "lyra2rev3",
+    "lyra2z",
+    "lyra2z330",
+    "m7m",
+    "minotaur",
+    "minotaurx",
+    "myr-gr",
+    "neoscrypt",
+    "nist5",
+    "pentablake",
+    "phi1612",
+    "phi2",
+    "polytimos",
+    "power2b",
+    "quark",
+    "qubit",
+    "scrypt",
+    "sha256d",
+    "sha256dt",
+    "sha256q",
+    "sha256t",
+    "sha3d",
+    "sha512256d",
+    "shavite3",
+    "skein",
+    "skein2",
+    "skunk",
+    "sonoa",
+    "timetravel",
+    "timetravel10",
+    "tribus",
+    "vanilla",
+    "veltor",
+    "verthash",
+    "whirlpool",
+    "whirlpoolx",
+    "x11",
+    "x11evo",
+    "x11gost",
+    "x12",
+    "x13",
+    "x13bcd",
+    "x13sm3",
+    "x14",
+    "x15",
+    "x16r",
+    "x16rv2",
+    "x16rt",
+    "x16rt-veil",
+    "x16s",
+    "x17",
+    "x20r",
+    "x21s",
+    "x22i",
+    "x25x",
+    "xevan",
+    "yescrypt",
+    "yescryptr8",
+    "yescryptr8g",
+    "yescryptr16",
+    "yescryptr32",
+    "yespower",
+    "yespowerr16",
+    "yespower-b2b",
+    "zr5",
+    "\0"};
 
-const char* algo_name( enum algos a );
+const char *algo_name(enum algos a);
 
 extern enum algos opt_algo;
 extern bool opt_debug;
@@ -801,7 +805,7 @@ extern int opt_timeout;
 extern bool want_longpoll;
 extern bool have_longpoll;
 extern bool have_gbt;
-extern char*  lp_id;
+extern char *lp_id;
 extern char *rpc_userpass;
 extern const char *gbt_lp_req;
 extern const char *getwork_req;
@@ -828,7 +832,7 @@ extern double net_diff;
 extern double net_hashrate;
 extern int opt_param_n;
 extern int opt_param_r;
-extern char* opt_param_key;
+extern char *opt_param_key;
 extern double opt_diff_factor;
 extern double opt_target_factor;
 extern bool opt_randomize;
@@ -850,7 +854,7 @@ extern const int pk_buffer_size_max;
 extern int pk_buffer_size;
 extern char *opt_data_file;
 extern bool opt_verify;
-extern bool opt_bell;    //  keyboard beep
+extern bool opt_bell; //  keyboard beep
 static char const usage[] = "\
 Usage: cpuminer [OPTIONS]\n\
 Options:\n\
@@ -983,10 +987,10 @@ Options:\n\
   -D, --debug           enable debug output\n\
   -P, --protocol-dump   verbose dump of protocol-level activities\n"
 #ifdef HAVE_SYSLOG_H
-"\
+                            "\
   -S, --syslog          use system log for output messages\n"
 #endif
-"\
+                            "\
   -B, --background      run the miner in the background\n\
       --benchmark       run in offline benchmark mode\n\
       --cpu-affinity    set process affinity to cpu core(s), mask 0x3 for cores 0 and 1\n\
@@ -1007,74 +1011,71 @@ Options:\n\
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #else
-struct option {
-        const char *name;
-        int has_arg;
-        int *flag;
-        int val;
+struct option
+{
+   const char *name;
+   int has_arg;
+   int *flag;
+   int val;
 };
 #endif
-
 
 static struct option const options[] = {
-        { "algo", 1, NULL, 'a' },
-        { "api-bind", 1, NULL, 'b' },
-        { "api-remote", 0, NULL, 1030 },
-        { "background", 0, NULL, 'B' },
-        { "benchmark", 0, NULL, 1005 },
-        { "cputest", 0, NULL, 1006 },
-        { "cert", 1, NULL, 1001 },
-        { "coinbase-addr", 1, NULL, 1016 },
-        { "coinbase-sig", 1, NULL, 1015 },
-        { "config", 1, NULL, 'c' },
-        { "cpu-affinity", 1, NULL, 1020 },
-        { "cpu-priority", 1, NULL, 1021 },
-        { "no-color", 0, NULL, 1002 },
-        { "debug", 0, NULL, 'D' },
-        { "diff-factor", 1, NULL, 'f' },
-        { "diff", 1, NULL, 'f' }, // deprecated (alias)
-        { "diff-multiplier", 1, NULL, 'm' },
-        { "hash-meter", 0, NULL, 1014 },
-        { "help", 0, NULL, 'h' },
-        { "key", 1, NULL, 'K' },
-        { "no-gbt", 0, NULL, 1011 },
-        { "no-getwork", 0, NULL, 1010 },
-        { "no-longpoll", 0, NULL, 1003 },
-        { "no-redirect", 0, NULL, 1009 },
-        { "no-stratum", 0, NULL, 1007 },
-        { "no-extranonce", 0, NULL, 1012 },
-        { "max-temp", 1, NULL, 1060 },
-        { "max-diff", 1, NULL, 1061 },
-        { "max-rate", 1, NULL, 1062 },
-        { "param-key", 1, NULL, 'K' },
-        { "param-n", 1, NULL, 'N' },
-        { "param-r", 1, NULL, 'R' },
-        { "pass", 1, NULL, 'p' },
-        { "protocol", 0, NULL, 'P' },
-        { "protocol-dump", 0, NULL, 'P' },
-        { "proxy", 1, NULL, 'x' },
-        { "quiet", 0, NULL, 'q' },
-        { "retries", 1, NULL, 'r' },
-        { "retry-pause", 1, NULL, 1025 },
-        { "randomize", 0, NULL, 1024 },
-        { "scantime", 1, NULL, 's' },
+    {"algo", 1, NULL, 'a'},
+    {"api-bind", 1, NULL, 'b'},
+    {"api-remote", 0, NULL, 1030},
+    {"background", 0, NULL, 'B'},
+    {"benchmark", 0, NULL, 1005},
+    {"cputest", 0, NULL, 1006},
+    {"cert", 1, NULL, 1001},
+    {"coinbase-addr", 1, NULL, 1016},
+    {"coinbase-sig", 1, NULL, 1015},
+    {"config", 1, NULL, 'c'},
+    {"cpu-affinity", 1, NULL, 1020},
+    {"cpu-priority", 1, NULL, 1021},
+    {"no-color", 0, NULL, 1002},
+    {"debug", 0, NULL, 'D'},
+    {"diff-factor", 1, NULL, 'f'},
+    {"diff", 1, NULL, 'f'}, // deprecated (alias)
+    {"diff-multiplier", 1, NULL, 'm'},
+    {"hash-meter", 0, NULL, 1014},
+    {"help", 0, NULL, 'h'},
+    {"key", 1, NULL, 'K'},
+    {"no-gbt", 0, NULL, 1011},
+    {"no-getwork", 0, NULL, 1010},
+    {"no-longpoll", 0, NULL, 1003},
+    {"no-redirect", 0, NULL, 1009},
+    {"no-stratum", 0, NULL, 1007},
+    {"no-extranonce", 0, NULL, 1012},
+    {"max-temp", 1, NULL, 1060},
+    {"max-diff", 1, NULL, 1061},
+    {"max-rate", 1, NULL, 1062},
+    {"param-key", 1, NULL, 'K'},
+    {"param-n", 1, NULL, 'N'},
+    {"param-r", 1, NULL, 'R'},
+    {"pass", 1, NULL, 'p'},
+    {"protocol", 0, NULL, 'P'},
+    {"protocol-dump", 0, NULL, 'P'},
+    {"proxy", 1, NULL, 'x'},
+    {"quiet", 0, NULL, 'q'},
+    {"retries", 1, NULL, 'r'},
+    {"retry-pause", 1, NULL, 1025},
+    {"randomize", 0, NULL, 1024},
+    {"scantime", 1, NULL, 's'},
 #ifdef HAVE_SYSLOG_H
-        { "syslog", 0, NULL, 'S' },
+    {"syslog", 0, NULL, 'S'},
 #endif
-        { "time-limit", 1, NULL, 1008 },
-        { "threads", 1, NULL, 't' },
-        { "timeout", 1, NULL, 'T' },
-        { "url", 1, NULL, 'o' },
-        { "user", 1, NULL, 'u' },
-        { "userpass", 1, NULL, 'O' },
-        { "data-file", 1, NULL, 1027 },
-        { "verify", 0, NULL, 1028 },
-        { "stratum-keepalive", 0, NULL, 1029 },
-        { "version", 0, NULL, 'V' },
-        { "bell", 0, NULL, 1031 },
-        { 0, 0, 0, 0 }
-};
-
+    {"time-limit", 1, NULL, 1008},
+    {"threads", 1, NULL, 't'},
+    {"timeout", 1, NULL, 'T'},
+    {"url", 1, NULL, 'o'},
+    {"user", 1, NULL, 'u'},
+    {"userpass", 1, NULL, 'O'},
+    {"data-file", 1, NULL, 1027},
+    {"verify", 0, NULL, 1028},
+    {"stratum-keepalive", 0, NULL, 1029},
+    {"version", 0, NULL, 'V'},
+    {"bell", 0, NULL, 1031},
+    {0, 0, 0, 0}};
 
 #endif /* __MINER_H__ */
-

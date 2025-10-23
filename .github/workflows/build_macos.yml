@@ -1,0 +1,111 @@
+name: Build cpuminer-opt macOS
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+  release:
+    types: [published]
+
+env:
+  # Homebrew dependencies
+  MACOS_DEPS: automake openssl curl jansson gmp
+
+jobs:
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS x86_64 builds
+          - os: macos-13
+            arch: x86_64-sse2
+            cflags: "-march=core2 -msse2"
+            suffix: "macos-x86_64-sse2"
+            target_arch: "x86_64"
+          - os: macos-13
+            arch: x86_64-avx
+            cflags: "-march=corei7-avx -maes"
+            suffix: "macos-x86_64-avx"
+            target_arch: "x86_64"
+          - os: macos-13
+            arch: x86_64-avx2
+            cflags: "-march=core-avx2 -maes"
+            suffix: "macos-x86_64-avx2"
+            target_arch: "x86_64"
+          # macOS ARM64 builds (Apple Silicon)
+          - os: macos-14
+            arch: arm64
+            cflags: "-march=armv8-a+crypto+aes"
+            suffix: "macos-arm64"
+            target_arch: "arm64"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Homebrew dependencies
+        run: |
+          # Skip brew update to save time, use existing packages
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          # Install only the packages we need
+          brew install --formula ${{ env.MACOS_DEPS }}
+
+      - name: Set up environment variables
+        run: |
+          if [ "${{ matrix.target_arch }}" = "x86_64" ]; then
+            echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=$(brew --prefix openssl)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+          else
+            # ARM64 specific paths
+            echo "OPENSSL_ROOT_DIR=/opt/homebrew" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+          fi
+
+      - name: Generate build files
+        run: |
+          ./autogen.sh
+
+      - name: Configure build
+        run: |
+          export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
+          CFLAGS="-O3 ${{ matrix.cflags }} -Wall -flax-vector-conversions" \
+          LDFLAGS="-L${OPENSSL_ROOT_DIR}/lib" \
+          CPPFLAGS="-I${OPENSSL_ROOT_DIR}/include" \
+          ./configure --with-curl --with-crypto=${OPENSSL_ROOT_DIR}
+
+      - name: Build
+        run: |
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Strip binary
+        run: |
+          strip cpuminer
+
+      - name: Rename binary
+        run: |
+          mv cpuminer cpuminer-${{ matrix.suffix }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpuminer-${{ matrix.suffix }}
+          path: cpuminer-${{ matrix.suffix }}
+          retention-days: 30
+
+  test-basic-macos:
+    needs: [build-macos]
+    runs-on: macos-13
+    steps:
+      - name: Download macOS SSE2 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cpuminer-macos-x86_64-sse2
+
+      - name: Make executable
+        run: chmod +x cpuminer-macos-x86_64-sse2
+# TODO: Add universal binary creation for both x86_64 and ARM64
+# TODO: Consider code signing for distribution if needed

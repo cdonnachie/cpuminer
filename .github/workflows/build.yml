@@ -1,0 +1,91 @@
+name: Build cpuminer-opt Linux
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+  release:
+    types: [published]
+
+env:
+  # Dependencies for Ubuntu
+  UBUNTU_DEPS: build-essential automake libssl-dev libcurl4-openssl-dev libjansson-dev libgmp-dev zlib1g-dev git
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64-sse2
+            cflags: "-march=core2 -msse2"
+            suffix: "linux-x86_64-sse2"
+          - arch: x86_64-avx
+            cflags: "-march=corei7-avx -maes"
+            suffix: "linux-x86_64-avx"
+          - arch: x86_64-avx2
+            cflags: "-march=core-avx2 -maes"
+            suffix: "linux-x86_64-avx2"
+          - arch: x86_64-avx512
+            cflags: "-march=skylake-avx512"
+            suffix: "linux-x86_64-avx512"
+          # ARM64 build removed - cross-compilation complexity and limited mining use case
+          # - arch: arm64
+          #   cflags: "-march=armv8-a+crypto+aes"
+          #   suffix: "linux-arm64"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ env.UBUNTU_DEPS }}
+
+      # ARM64 cross-compiler step removed since ARM64 build was removed
+
+      - name: Generate build files
+        run: |
+          ./autogen.sh
+
+      - name: Configure build
+        run: |
+          # Native x86_64 compilation only (ARM64 removed)
+          CFLAGS="-O3 ${{ matrix.cflags }} -Wall -flax-vector-conversions" \
+          ./configure --with-curl
+
+      - name: Build
+        run: |
+          make -j$(nproc)
+
+      - name: Strip binary
+        run: |
+          strip cpuminer
+
+      - name: Rename binary
+        run: |
+          mv cpuminer cpuminer-${{ matrix.suffix }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpuminer-${{ matrix.suffix }}
+          path: cpuminer-${{ matrix.suffix }}
+          retention-days: 30
+
+  test-basic:
+    needs: [build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux SSE2 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cpuminer-linux-x86_64-sse2
+
+      - name: Make executable
+        run: chmod +x cpuminer-linux-x86_64-sse2
+# TODO: Add Windows builds after Linux is working
+# TODO: Add macOS builds after Windows is working

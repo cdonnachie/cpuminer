@@ -39,7 +39,9 @@
 /* neoscrypt_blkcpy(dst, src, len) = SSE2 based block memcpy();
  * len must be a multiple of 64 bytes aligned properly */
 .globl neoscrypt_blkcpy
+.globl _neoscrypt_blkcpy
 neoscrypt_blkcpy:
+_neoscrypt_blkcpy:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
@@ -71,10 +73,12 @@ neoscrypt_blkcpy:
 	ret
 
 
-/* neoscrypt_blkswp(blkA, blkB, len) = SSE2 based block swapper;
+/* neoscrypt_blkswp(blkA, blkB, len) = SSE2 based block swap;
  * len must be a multiple of 64 bytes aligned properly */
 .globl neoscrypt_blkswp
+.globl _neoscrypt_blkswp
 neoscrypt_blkswp:
+_neoscrypt_blkswp:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
@@ -114,10 +118,12 @@ neoscrypt_blkswp:
 	ret
 
 
-/* neoscrypt_blkxor(dst, src, len) = SSE2 based block XOR engine;
+/* neoscrypt_blkxor(dst, src, len) = SSE2 based block XOR;
  * len must be a multiple of 64 bytes aligned properly */
 .globl neoscrypt_blkxor
+.globl _neoscrypt_blkxor
 neoscrypt_blkxor:
+_neoscrypt_blkxor:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
@@ -157,10 +163,11 @@ neoscrypt_blkxor:
 	ret
 
 
-/* neoscrypt_salsa(mem, rounds) = SSE2 based Salsa20;
- * mem must be aligned properly, rounds must be a multiple of 2 */
+/* neoscrypt_salsa(blk) = SSE2 optimised Salsa20/8 core */
 .globl neoscrypt_salsa
+.globl _neoscrypt_salsa
 neoscrypt_salsa:
+_neoscrypt_salsa:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
@@ -263,7 +270,9 @@ neoscrypt_salsa:
  * correct map:  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
  * SSE2 map:     0   5  10  15  12   1   6  11   8  13   2   7   4   9  14   3 */
 .globl neoscrypt_salsa_tangle
+.globl _neoscrypt_salsa_tangle
 neoscrypt_salsa_tangle:
+_neoscrypt_salsa_tangle:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
@@ -311,7 +320,9 @@ neoscrypt_salsa_tangle:
 /* neoscrypt_chacha(mem, rounds) = SSE2 based ChaCha20;
  * mem must be aligned properly, rounds must be a multiple of 2 */
 .globl neoscrypt_chacha
+.globl _neoscrypt_chacha
 neoscrypt_chacha:
+_neoscrypt_chacha:
 #if (WIN64)
 	movq	%rdi, %r10
 	movq	%rsi, %r11
