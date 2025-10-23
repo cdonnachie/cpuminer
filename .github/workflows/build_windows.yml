@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag to attach binaries to'
+        description: "Release tag to attach binaries to"
         required: false
-        default: 'latest'
+        default: "latest"
 
 env:
   # MSYS2 dependencies
