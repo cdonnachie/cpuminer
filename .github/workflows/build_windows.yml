@@ -7,6 +7,12 @@ on:
     branches: [master, main]
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to attach binaries to'
+        required: false
+        default: 'latest'
 
 env:
   # MSYS2 dependencies
@@ -157,7 +163,7 @@ jobs:
           ./cpuminer-windows-x86_64-sse2.exe --help
 
   create-windows-release:
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     needs: [build-windows, test-basic-windows]
     runs-on: ubuntu-latest
     steps:
@@ -172,7 +178,7 @@ jobs:
           mkdir -p cpuminer-windows-all
           cd windows-artifacts
           for dir in */; do
-            unzip -j "$dir"*.zip -d ../cpuminer-windows-all/
+            unzip -o -j "$dir"*.zip -d ../cpuminer-windows-all/
           done
           cd ..
           zip -r cpuminer-windows-all-variants.zip cpuminer-windows-all/
@@ -181,5 +187,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: cpuminer-windows-all-variants.zip
+          tag_name: ${{ github.event.inputs.release_tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
