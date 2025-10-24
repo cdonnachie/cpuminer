@@ -35,20 +35,12 @@ jobs:
             suffix: "macos-x86_64-avx2"
             target_arch: "x86_64"
           # macOS ARM64 builds (Apple Silicon)
+          # Note: macOS ARM64 uses native optimizations by default
+          # We'll use different -O levels and specific feature flags
           - os: macos-14
-            arch: arm64-crypto
-            cflags: "-march=armv8-a+crypto"
-            suffix: "macos-arm64-crypto"
-            target_arch: "arm64"
-          - os: macos-14
-            arch: arm64-optimized
-            cflags: "-march=armv8-a+crypto+aes+sha2"
-            suffix: "macos-arm64-optimized"
-            target_arch: "arm64"
-          - os: macos-14
-            arch: arm64-neon
-            cflags: "-march=armv8-a+crypto+aes+sha2+fp16+rcpc"
-            suffix: "macos-arm64-neon"
+            arch: arm64
+            cflags: "-mcpu=apple-m1"
+            suffix: "macos-arm64"
             target_arch: "arm64"
 
     runs-on: ${{ matrix.os }}
