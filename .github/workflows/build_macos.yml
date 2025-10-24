@@ -41,18 +41,13 @@ jobs:
             suffix: "macos-arm64-crypto"
             target_arch: "arm64"
           - os: macos-14
-            arch: arm64-aes
-            cflags: "-march=armv8-a+crypto+aes"
-            suffix: "macos-arm64-aes"
-            target_arch: "arm64"
-          - os: macos-14
-            arch: arm64-sha
-            cflags: "-march=armv8-a+crypto+aes+sha2+sha3"
-            suffix: "macos-arm64-sha"
+            arch: arm64-optimized
+            cflags: "-march=armv8-a+crypto+aes+sha2"
+            suffix: "macos-arm64-optimized"
             target_arch: "arm64"
           - os: macos-14
             arch: arm64-neon
-            cflags: "-march=armv8-a+crypto+aes+sha2+sha3+fp16+rcpc"
+            cflags: "-march=armv8-a+crypto+aes+sha2+fp16+rcpc"
             suffix: "macos-arm64-neon"
             target_arch: "arm64"
 
@@ -87,6 +82,7 @@ jobs:
       - name: Configure build
         run: |
           export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}"
+          echo "Building with CFLAGS: -O3 ${{ matrix.cflags }} -Wall -flax-vector-conversions"
           CFLAGS="-O3 ${{ matrix.cflags }} -Wall -flax-vector-conversions" \
           LDFLAGS="-L${OPENSSL_ROOT_DIR}/lib" \
           CPPFLAGS="-I${OPENSSL_ROOT_DIR}/include" \
@@ -95,6 +91,13 @@ jobs:
       - name: Build
         run: |
           make -j$(sysctl -n hw.ncpu)
+
+      - name: Verify build differences
+        run: |
+          echo "Binary info for ${{ matrix.suffix }}:"
+          file cpuminer
+          ls -la cpuminer
+          otool -hv cpuminer | head -20 || true
 
       - name: Strip binary
         run: |
